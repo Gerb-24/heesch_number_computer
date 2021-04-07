@@ -1,3 +1,5 @@
+from numba import jit
+
 class Triangle:
 
     """ Here we create triangles of side length 1"""
@@ -38,18 +40,17 @@ class Triangle:
         #print(" a triangle has been turned")
         vertex_list = [self.v1, self.v2, self.v3]
         new_vertex_list = []
-        for i in range(len(vertex_list)):
-            new_vertex = (-vertex_list[i][1]+vertex_list[i][0], vertex_list[i][0])
+        for vert in vertex_list:
+            new_vertex = (-vert[1]+vert[0], vert[0])
             new_vertex_list.append(new_vertex)
-        xmin = min([elem[0] for elem in vertex_list])
-        xmax = max([elem[0] for elem in vertex_list])
-        ymin = min([elem[1] for elem in vertex_list])
-        ymax = max([elem[1] for elem in vertex_list])
-
-        if (xmax, ymax) in vertex_list:
+        xmin = min([elem[0] for elem in new_vertex_list])
+        ymin = min([elem[1] for elem in new_vertex_list])
+        ymax = max([elem[1] for elem in new_vertex_list])
+        if not self.up:
             return Triangle(xmin, ymin)
         else:
             return Triangle(xmin, ymax, up=False)
+
 
     def plot_data(self, color= "b-"):
         plottinglist = []
@@ -89,7 +90,29 @@ class Shape:
         # vertex_list = [elem for  elem in vertex_list if elem not in self.inside()]
         return vertex_list
 
+    def copy(self):
+        return Shape(self.triangles)
+
+    def orientations(self):
+        orientation_list =[
+        self,
+        self.turn60(),
+        self.turn60().turn60(),
+        self.turn60().turn60().turn60(),
+        self.turn60().turn60().turn60().turn60(),
+        self.turn60().turn60().turn60().turn60().turn60(),
+        self.flip(),
+        self.flip().turn60(),
+        self.flip().turn60().turn60(),
+        self.flip().turn60().turn60().turn60(),
+        self.flip().turn60().turn60().turn60().turn60(),
+        self.flip().turn60().turn60().turn60().turn60().turn60(),
+        ]
+        return orientation_list
+
+
     """ With these functions we edit the shape"""
+    @jit(nopython=True)
     def translate(self, xval, yval):
         new_triangles = []
         for triangle in self.triangles:
@@ -99,6 +122,7 @@ class Shape:
     def translate_rel(self, tri1, tri2):
         return self.translate(tri1.v1[0]-tri2.v1[0], tri1.v1[1]-tri2.v1[1])
 
+    @jit(nopython=True)
     def flip(self):
         new_triangles = []
         for triangle in self.triangles:
@@ -130,6 +154,7 @@ class Shape:
         res = [elem for elem in res if elem not in self.triangles]
         return res
 
+    @jit(nopython=True)
     def corona_maker(self, base_orientations):
 
         def not_occupied_in(elem, config):
@@ -137,32 +162,35 @@ class Shape:
             for shape in config:
                 config_triangles.extend(shape.triangles)
             return (elem not in config_triangles)
-
         bookkeeper = []
         possible_config = []
         outside_list = self.outside()
         #print(f"the outside list length is {len(outside_list)}")
-        for elem in outside_list:
+        for i in range(len(outside_list)):
+            print(f" we are now at {(i+1)/len(outside_list)*100}% ")
+            elem = outside_list[i]
             if len(possible_config) == 0:
-                for elem3 in [elem2 for elem2 in self.triangles if elem2.up == elem.up]:
-                    #print(elem.up, elem3.up)
-                    new_shape = self.translate_rel(elem, elem3)
-                    if all(triangle not in self.triangles for triangle in new_shape.triangles):
-                        possible_config.append([new_shape])
-                bookkeeper.append(possible_config)
+                for orientation in base_orientations:
+                    for elem3 in [elem2 for elem2 in orientation.triangles if elem2.up == elem.up]:
+                        #print(elem.up, elem3.up)
+                        new_shape = orientation.translate_rel(elem, elem3)
+                        if all(triangle not in self.triangles for triangle in new_shape.triangles):
+                            possible_config.append([new_shape])
+                    bookkeeper.append(possible_config)
 
             else:
                 new_possible_config = []
                 for config in possible_config:
                     if not_occupied_in(elem, config):
-                        for elem3 in [elem2 for elem2 in self.triangles if elem2.up == elem.up]:
-                            new_shape = self.translate_rel(elem, elem3)
-                            if all(triangle not in self.triangles and not_occupied_in(triangle, config) for triangle in new_shape.triangles):
-                                new_config = config.copy()
-                                new_config.append(new_shape)
-                                new_possible_config.append(new_config)
-                    else:
-                        new_possible_config.append(config)
+                        for orientation in base_orientations:
+                            for elem3 in [elem2 for elem2 in orientation.triangles if elem2.up == elem.up]:
+                                new_shape = orientation.translate_rel(elem, elem3)
+                                if all(triangle not in self.triangles and not_occupied_in(triangle, config) for triangle in new_shape.triangles):
+                                    new_config = config.copy()
+                                    new_config.append(new_shape)
+                                    new_possible_config.append(new_config)
+                        else:
+                            new_possible_config.append(config)
 
                 possible_config = new_possible_config.copy()
                 bookkeeper.append(possible_config)
@@ -173,6 +201,8 @@ class Shape:
 
     1) plot_data will give the edges of the shape
     2) outside_plot_data will give the edges of the surrounding triangles """
+
+    @jit(nopython=True)
     def plot_data(self, color= "b-"):
         plottinglist = []
         for edge in self.edges:
