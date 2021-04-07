@@ -13,7 +13,7 @@ class Triangle:
     def translate(self, xval, yval):
         newx = self.x + xval
         newy = self.y + yval
-        return Triangle(newx,newy, self.up)
+        return Triangle(newx,newy, up = self.up)
 
     def __str__(self):
         return f"{self.v1}, {self.v2}, {self.v3}"
@@ -28,30 +28,37 @@ class Triangle:
                     return edge
 
     def flip(self):
-        self.v3 = (self.x,self.y-1) if self.up else (self.x+1,self.y+1)
-        self.up = not self.up
-        self.edges = [{self.v1,self.v2},{self.v2, self.v3}, {self.v3, self.v1}]
+        return Triangle(-self.v1[0]+self.v1[1],self.v1[1], up=self.up)
 
-    """ This takes in an edge and returns a Triangle that is next to the base triangle at that edge """
-    def flip_around(self, edge):
-        if self.up:
-            if edge == {self.v1,self.v2}:
-                return Triangle(0,0, up=False)
-            elif edge == {self.v2,self.v3}:
-                return Triangle(1,1, up=False)
-            elif edge == {self.v1,self.v3}:
-                return Triangle(0,1, up=False)
+
     def vertex_returner(self):
         return self.v1,self.v2,self.v3
 
-    def turn30(self):
+    def turn60(self):
         #print(" a triangle has been turned")
         vertex_list = [self.v1, self.v2, self.v3]
+        new_vertex_list = []
         for i in range(len(vertex_list)):
-            vertex_list[i] = (-vertex_list[i][1]+vertex_list[i][0], vertex_list[i][0])
-        self.v1, self.v2, self.v3 = vertex_list[0], vertex_list[1], vertex_list[2]
-        self.edges = [{self.v1,self.v2},{self.v2, self.v3}, {self.v3, self.v1}]
-        print(vertex_list)
+            new_vertex = (-vertex_list[i][1]+vertex_list[i][0], vertex_list[i][0])
+            new_vertex_list.append(new_vertex)
+        xmin = min([elem[0] for elem in vertex_list])
+        xmax = max([elem[0] for elem in vertex_list])
+        ymin = min([elem[1] for elem in vertex_list])
+        ymax = max([elem[1] for elem in vertex_list])
+
+        if (xmax, ymax) in vertex_list:
+            return Triangle(xmin, ymin)
+        else:
+            return Triangle(xmin, ymax, up=False)
+
+    def plot_data(self, color= "b-"):
+        plottinglist = []
+        for edge in self.edges:
+            el = list(edge)
+            xcoords = [el[0][0], el[1][0]]
+            ycoords = [el[0][1]-el[0][0], el[1][1]-el[1][0]]
+            plottinglist.extend([xcoords, ycoords, color])
+        return plottinglist
 
 
 class Shape:
@@ -89,10 +96,20 @@ class Shape:
             new_triangles.append(triangle.translate(xval, yval))
         return Shape(new_triangles)
 
-    def turn30(self):
+    def translate_rel(self, tri1, tri2):
+        return self.translate(tri1.v1[0]-tri2.v1[0], tri1.v1[1]-tri2.v1[1])
+
+    def flip(self):
+        new_triangles = []
         for triangle in self.triangles:
-            triangle.turn30()
-        self.edges = self.edgemaker(self.triangles)
+            new_triangles.append(triangle.flip())
+        return Shape(new_triangles)
+
+    def turn60(self):
+        new_triangles = []
+        for triangle in self.triangles:
+            new_triangles.append(triangle.turn60())
+        return Shape(new_triangles)
 
     def inside(self):
         vertex_list = []
@@ -113,6 +130,44 @@ class Shape:
         res = [elem for elem in res if elem not in self.triangles]
         return res
 
+    def corona_maker(self, base_orientations):
+
+        def not_occupied_in(elem, config):
+            config_triangles = []
+            for shape in config:
+                config_triangles.extend(shape.triangles)
+            return (elem not in config_triangles)
+
+        bookkeeper = []
+        possible_config = []
+        outside_list = self.outside()
+        #print(f"the outside list length is {len(outside_list)}")
+        for elem in outside_list:
+            if len(possible_config) == 0:
+                for elem3 in [elem2 for elem2 in self.triangles if elem2.up == elem.up]:
+                    #print(elem.up, elem3.up)
+                    new_shape = self.translate_rel(elem, elem3)
+                    if all(triangle not in self.triangles for triangle in new_shape.triangles):
+                        possible_config.append([new_shape])
+                bookkeeper.append(possible_config)
+
+            else:
+                new_possible_config = []
+                for config in possible_config:
+                    if not_occupied_in(elem, config):
+                        for elem3 in [elem2 for elem2 in self.triangles if elem2.up == elem.up]:
+                            new_shape = self.translate_rel(elem, elem3)
+                            if all(triangle not in self.triangles and not_occupied_in(triangle, config) for triangle in new_shape.triangles):
+                                new_config = config.copy()
+                                new_config.append(new_shape)
+                                new_possible_config.append(new_config)
+                    else:
+                        new_possible_config.append(config)
+
+                possible_config = new_possible_config.copy()
+                bookkeeper.append(possible_config)
+        return possible_config
+
     """ With these function we output a list to be put into a plot
     as input we specify the color we want the line to have
 
@@ -129,7 +184,7 @@ class Shape:
 
     def outside_plot_data(self):
         plottinglist = []
-        for elem in S1.outside():
+        for elem in self.outside():
             for edge in elem.edges:
                 el = list(edge)
                 xcoords = [el[0][0], el[1][0]]
