@@ -57,8 +57,8 @@ class Triangle:
         plottinglist = []
         for edge in self.edges:
             el = list(edge)
-            xcoords = [el[0][0], el[1][0]]
-            ycoords = [el[0][1]-el[0][0], el[1][1]-el[1][0]]
+            xcoords = [el[0][0]-0.5 * el[0][1], el[1][0]- 0.5 * el[1][1]]
+            ycoords = [0.5*np.sqrt(3)*el[0][1], 0.5*np.sqrt(3)*el[1][1]]
             plottinglist.extend([xcoords, ycoords, color])
         return plottinglist
 
@@ -165,7 +165,7 @@ class Shape:
         res = [elem for elem in res if elem not in self.triangles]
         return res
 
-    def corona_maker(self, base_orientations):
+    def corona_maker(self, base_orientations, bookkeeping=False):
 
         def not_occupied_in(elem, config):
             config_triangles = []
@@ -180,14 +180,15 @@ class Shape:
             print(f" we are now at {(i+1)/len(outside_list)*100}% ")
             elem = outside_list[i]
             if len(possible_config) == 0:
-                print("going through the zero loop")
+                #print("going through the zero loop")
                 for orientation in base_orientations:
                     for elem3 in [elem2 for elem2 in orientation.triangles if elem2.up == elem.up]:
                         #print(elem.up, elem3.up)
                         new_shape = orientation.translate_rel(elem, elem3)
                         if all(triangle not in self.triangles for triangle in new_shape.triangles):
                             possible_config.append([new_shape])
-                    bookkeeper.append(possible_config)
+                #print(" zero loop appending ")
+                bookkeeper.append(possible_config)
 
             else:
                 new_possible_config = []
@@ -202,12 +203,14 @@ class Shape:
                                     new_possible_config.append(new_config)
                                 else:
                                     continue
-                        else:
-                            new_possible_config.append(config)
+                    else:
+                        #print(f" its occupied in the config? ")
+                        new_possible_config.append(config)
 
                 possible_config = new_possible_config.copy()
+                #print(possible_config)
                 bookkeeper.append(possible_config)
-        return bookkeeper
+        return bookkeeper if bookkeeping else possible_config
 
     """ With these function we output a list to be put into a plot
     as input we specify the color we want the line to have
