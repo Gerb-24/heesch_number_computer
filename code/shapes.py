@@ -1,4 +1,4 @@
-import numpy as np
+from math import sqrt
 
 
 class Triangle:
@@ -58,7 +58,7 @@ class Triangle:
         for edge in self.edges:
             el = list(edge)
             xcoords = [el[0][0]-0.5 * el[0][1], el[1][0]- 0.5 * el[1][1]]
-            ycoords = [0.5*np.sqrt(3)*el[0][1], 0.5*np.sqrt(3)*el[1][1]]
+            ycoords = [0.5*sqrt(3)*el[0][1], 0.5*sqrt(3)*el[1][1]]
             plottinglist.extend([xcoords, ycoords, color])
         return plottinglist
 
@@ -177,7 +177,7 @@ class Shape:
         outside_list = self.outside()
         #print(f"the outside list length is {len(outside_list)}")
         for i in range(len(outside_list)):
-            print(f" we are now at {(i+1)/len(outside_list)*100}% ")
+            print(f" we are now at {int((i+1)/len(outside_list)*100)}% ")
             elem = outside_list[i]
             if len(possible_config) == 0:
                 #print("going through the zero loop")
@@ -223,7 +223,7 @@ class Shape:
         for edge in self.edges:
             el = list(edge)
             xcoords = [el[0][0]-0.5 * el[0][1], el[1][0]- 0.5 * el[1][1]]
-            ycoords = [0.5*np.sqrt(3)*el[0][1], 0.5*np.sqrt(3)*el[1][1]]
+            ycoords = [0.5*sqrt(3)*el[0][1], 0.5*sqrt(3)*el[1][1]]
             plottinglist.extend([xcoords, ycoords, color])
         return plottinglist
 

@@ -1,6 +1,5 @@
 from shapes import Triangle, Shape
 from shapes import hexagon_maker as hexmaker
-import matplotlib.pyplot as plt
 
 
 S1 = Shape(hexmaker(0,0)+hexmaker(2,1)+hexmaker(3,0)+hexmaker(2,-2)+hexmaker(0,-3))
@@ -17,24 +16,14 @@ S1 = Shape(hexmaker(0,0)+hexmaker(2,1)+hexmaker(3,0)+hexmaker(2,-2)+hexmaker(0,-
 #             # for j in range(k+1):
 #             #     plottinglist.extend(S1.outside()[j].translate(i*5,k*5).plot_data("r-"))
 
-def shape_plotter(base):
-    plottinglist = []
-    plottinglist.extend(base.plot_data())
-    axs = plt.subplot()
-    axs.plot(*(plottinglist))
-    plt.title('hexagon plot')
-    axs.set_aspect("equal")
-    plt.show()
 
-def corona_plotter(base):
+
+def plotting_list_writer(base):
     plottinglist = []
     for shape in base.corona_maker(base.orientations())[0]:
         plottinglist.extend(shape.plot_data(color = "g-"))
     plottinglist.extend(base.plot_data())
-    axs = plt.subplot()
-    axs.plot(*(plottinglist))
-    plt.title('hexagon plot')
-    axs.set_aspect("equal")
-    plt.show()
+    with open('./plotlist.txt', 'w') as file:
+        file.write(str(plottinglist))
 
-corona_plotter(S1)
+plotting_list_writer(S1)
