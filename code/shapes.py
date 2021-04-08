@@ -146,13 +146,13 @@ class Shape:
             new_triangles.append(triangle.turn60())
         return Shape(new_triangles)
 
-    def inside(self):
-        vertex_list = []
+    def inside_remover(self):
+        inside_list = []
         for triangle in self.triangles:
             if all(edge not in self.edges for edge in triangle.edges):
-                vertex_list.extend(triangle.verts)
-        vertex_list = list(set(vertex_list))
-        return vertex_list
+                inside_list.append(triangle)
+        new_triangles = [elem for elem in self.triangles if elem not in inside_list]
+        return new_triangles
 
     def outside(self):
         hexlist = []
@@ -166,12 +166,13 @@ class Shape:
         return res
 
     def corona_maker(self, base_orientations, bookkeeping=False):
-
         def not_occupied_in(elem, config):
             config_triangles = []
             for shape in config:
                 config_triangles.extend(shape.triangles)
             return (elem not in config_triangles)
+
+        base_orientations_boundaries = [orientation.inside_remover() for orientation in base_orientations ]
         bookkeeper = []
         possible_config = []
         outside_list = self.outside()
@@ -181,10 +182,10 @@ class Shape:
             elem = outside_list[i]
             if len(possible_config) == 0:
                 #print("going through the zero loop")
-                for orientation in base_orientations:
-                    for elem3 in [elem2 for elem2 in orientation.triangles if elem2.up == elem.up]:
+                for index in range(len(base_orientations)):
+                    for elem3 in [elem2 for elem2 in base_orientations_boundaries[index] if elem2.up == elem.up]:
                         #print(elem.up, elem3.up)
-                        new_shape = orientation.translate_rel(elem, elem3)
+                        new_shape = base_orientations[index].translate_rel(elem, elem3)
                         if all(triangle not in self.triangles for triangle in new_shape.triangles):
                             possible_config.append([new_shape])
                 #print(" zero loop appending ")
@@ -194,9 +195,9 @@ class Shape:
                 new_possible_config = []
                 for config in possible_config:
                     if not_occupied_in(elem, config):
-                        for orientation in base_orientations:
-                            for elem3 in [elem2 for elem2 in orientation.triangles if elem2.up == elem.up]:
-                                new_shape = orientation.translate_rel(elem, elem3)
+                        for index in range(len(base_orientations)):
+                            for elem3 in [elem2 for elem2 in base_orientations_boundaries[index] if elem2.up == elem.up]:
+                                new_shape = base_orientations[index].translate_rel(elem, elem3)
                                 if all(triangle not in self.triangles and not_occupied_in(triangle, config) for triangle in new_shape.triangles):
                                     new_config = config.copy()
                                     new_config.append(new_shape)
@@ -241,3 +242,21 @@ def hexagon_maker(x,y):
     down_triangles = [Triangle(x,y, up=False), Triangle(x+1,y+1, up=False), Triangle(x+1,y, up=False)]
     up_triangles = [Triangle(x,y), Triangle(x,y-1), Triangle(x+1,y)]
     return down_triangles+up_triangles
+
+def triangle_of_hexes():
+    new_list =  [
+        hexagon_maker(0,0),
+        hexagon_maker(3,0),
+        hexagon_maker(6,0),
+        hexagon_maker(1,-1),
+        hexagon_maker(4,-1),
+        hexagon_maker(2,-2),
+        hexagon_maker(0,-3),
+        hexagon_maker(3,-3),
+        hexagon_maker(1,-4),
+        hexagon_maker(0,-6),
+        ]
+    hexlist = []
+    for hex in new_list:
+        hexlist.extend(hex)
+    return hexlist

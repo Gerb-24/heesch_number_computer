@@ -1,8 +1,9 @@
 from shapes import Triangle, Shape
 from shapes import hexagon_maker as hexmaker
+from shapes import triangle_of_hexes as toh
 
 
-S1 = Shape(hexmaker(0,0)+hexmaker(2,1)+hexmaker(3,0)+hexmaker(2,-2)+hexmaker(0,-3))
+S1 = Shape(toh())
 
 # bookkeeper = S1.corona_maker(S1.orientations(), bookkeeping=True)
 # # for k in range(len(bookkeeper)):
@@ -18,12 +19,16 @@ S1 = Shape(hexmaker(0,0)+hexmaker(2,1)+hexmaker(3,0)+hexmaker(2,-2)+hexmaker(0,-
 
 
 
-def plotting_list_writer(base):
+def plotting_list_writer(base, type = "corona"):
     plottinglist = []
-    for shape in base.corona_maker(base.orientations())[0]:
-        plottinglist.extend(shape.plot_data(color = "g-"))
+    if type == "corona":
+        for shape in base.corona_maker(base.orientations())[5]:
+            plottinglist.extend(shape.plot_data(color = "g-"))
+    elif type == "boundary":
+        for triangle in base.inside_remover():
+            plottinglist.extend(triangle.plot_data("g-"))
     plottinglist.extend(base.plot_data())
     with open('./plotlist.txt', 'w') as file:
         file.write(str(plottinglist))
 
-plotting_list_writer(S1)
+plotting_list_writer(S1, type = "corona")
