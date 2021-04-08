@@ -21,7 +21,7 @@ def bookkeeper_plotting_list(base):
 def plotting_list_writer(base, type = "corona"):
     plottinglist = []
     if type == "corona":
-        for shape in base.corona_maker(base.orientations())[5]:
+        for shape in base.corona_maker(base.orientations())[0]:
             plottinglist.extend(shape.plot_data(color = "g-"))
     elif type == "boundary":
         for triangle in base.inside_remover():

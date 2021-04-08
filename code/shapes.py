@@ -67,25 +67,16 @@ class Shape:
     def __init__(self, triangles):
         self.triangles = triangles
         self.edges = self.edgemaker(self.triangles)
-        self.verts = self.vertmaker(self.triangles)
 
     """ With these functions we instantiate some stuff"""
     def edgemaker(self, triangles):
-        total_edge_list = triangles[0].edges
-        edge_counter = []
-        for i in range(len(triangles)-1):
-            for edge in total_edge_list:
-                for other_edge in triangles[i+1].edges:
-                    if edge == other_edge:
-                        edge_counter.append(edge)
-            total_edge_list = total_edge_list + triangles[i+1].edges
-            total_edge_list = [i for i in total_edge_list if i not in edge_counter]
-            edge_counter = []
+        total_edge_list = [edge for triangle in self.triangles for edge in triangle.edges]
+        total_edge_list = [edge for edge in total_edge_list if total_edge_list.count(edge) == 1]
         return total_edge_list
 
-    def vertmaker(self, triangles):
+    def vertmaker(self):
         vertex_list = []
-        for triangle in triangles:
+        for triangle in self.triangles:
             vertex_list.extend(triangle.verts)
         vertex_list = list(set(vertex_list))
         # vertex_list = [elem for  elem in vertex_list if elem not in self.inside()]
@@ -155,7 +146,7 @@ class Shape:
 
     def outside(self):
         hexlist = []
-        for vert in self.verts:
+        for vert in self.vertmaker():
             hexlist.extend(hexagon_maker(vert[0]-1,vert[1]))
         res = []
         for elem in hexlist:
@@ -170,6 +161,7 @@ class Shape:
             for shape in config:
                 config_triangles.extend(shape.triangles)
             return (elem not in config_triangles)
+
 
         base_orientations_boundaries = [orientation.inside_remover() for orientation in base_orientations ]
         bookkeeper = []
