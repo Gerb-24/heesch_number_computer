@@ -123,7 +123,6 @@ class Shape:
                 new_orientations_list.append(orientation)
         return new_orientations_list
 
-
     """ With these functions we edit the shape"""
     def translate(self, xval, yval):
         new_triangles = []
@@ -237,6 +236,7 @@ class Shape:
                 ycoords = [el[0][1]-el[0][0], el[1][1]-el[1][0]]
                 plottinglist.extend([xcoords, ycoords, "b-"])
         return plottinglist
+
 
 def hexagon_maker(x,y):
     down_triangles = [Triangle(x,y, up=False), Triangle(x+1,y+1, up=False), Triangle(x+1,y, up=False)]
