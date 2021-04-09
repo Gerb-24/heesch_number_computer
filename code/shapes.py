@@ -7,22 +7,19 @@ class Triangle:
 
     def __init__(self, x, y, up = True):
         self.up = up
-        self.x = x
-        self.y = y
-        self.v1, self.v2, self.v3 = ((self.x,self.y), (self.x+1,self.y), (self.x+1, self.y+1)) if self.up else ((self.x,self.y),(self.x+1,self.y),(self.x,self.y-1))
-        self.verts = [self.v1, self.v2, self.v3]
+        self.v1, self.v2, self.v3 = ((x,y), (x+1,y), (x+1, y+1)) if self.up else ((x,y),(x+1,y),(x,y-1))
         self.edges = [{self.v1,self.v2},{self.v2, self.v3}, {self.v3, self.v1}]
 
     def translate(self, xval, yval):
-        newx = self.x + xval
-        newy = self.y + yval
+        newx = self.v1[0] + xval
+        newy = self.v1[1] + yval
         return Triangle(newx,newy, up = self.up)
 
     def __str__(self):
         return f"{self.v1}, {self.v2}, {self.v3}"
 
     def __eq__(self, other):
-        return(set(self.verts) == set(other.verts))
+        return(self.v1 == other.v1 and self.up == other.up)
 
     def common_edge(self, other):
         for edge in self.edges:
@@ -35,7 +32,7 @@ class Triangle:
 
 
     def vertex_returner(self):
-        return self.v1,self.v2,self.v3
+        return [self.v1,self.v2,self.v3]
 
     def turn60(self):
         #print(" a triangle has been turned")
@@ -77,7 +74,7 @@ class Shape:
     def vertmaker(self):
         vertex_list = []
         for triangle in self.triangles:
-            vertex_list.extend(triangle.verts)
+            vertex_list.extend(triangle.vertex_returner())
         vertex_list = list(set(vertex_list))
         # vertex_list = [elem for  elem in vertex_list if elem not in self.inside()]
         return vertex_list
