@@ -5,10 +5,13 @@ class Triangle:
 
     """ Here we create triangles of side length 1"""
 
-    def __init__(self, x, y, up = True):
+    def __init__(self, x, y, up = True, edgedata = [ 0, 0, 0 ]):
         self.up = up
         self.v1, self.v2, self.v3 = ((x,y), (x+1,y), (x+1, y+1)) if self.up else ((x,y),(x+1,y),(x,y-1))
-        self.edges = [{self.v1,self.v2},{self.v2, self.v3}, {self.v3, self.v1}]
+        self.edgedict = [{ "edge": {self.v1,self.v2}, "type": edgedata[0]},
+                    {"edge": {self.v2, self.v3}, "type": edgedata[1]},
+                    {"edge": {self.v3, self.v1}, "type": edgedata[2]}]
+        self.edges = [elem["edge"] for elem in self.edgedict]
 
     def translate(self, xval, yval):
         newx = self.v1[0] + xval
