@@ -66,10 +66,10 @@ class Triangle:
 class Shape:
     def __init__(self, triangles):
         self.triangles = triangles
-        self.edges = self.edgemaker(self.triangles)
+        self.edges = self.edgemaker()
 
     """ With these functions we instantiate some stuff"""
-    def edgemaker(self, triangles):
+    def edgemaker(self):
         total_edge_list = [edge for triangle in self.triangles for edge in triangle.edges]
         total_edge_list = [edge for edge in total_edge_list if total_edge_list.count(edge) == 1]
         return total_edge_list
@@ -229,6 +229,38 @@ class Shape:
                 plottinglist.extend([xcoords, ycoords, "b-"])
         return plottinglist
 
+
+class Hexagon:
+        def __init__(self, x, y):
+            self.origin = (x, y)
+            self.shape = Shape(hexagon_maker(x-1,y))
+
+        def __eq__(self, other):
+            return self.origin == other.origin
+
+
+class HShape:
+    def __init__(self, triangles, hexes):
+        self.triangles = triangles
+        self.hexes = hexes
+        self.edges = self.edgemaker()
+
+    """ With these functions we instantiate some stuff"""
+    def edgemaker(self):
+        triangle_edge_list = [edge for hex in self.hexes for edge in hex.shape.edges]
+        hexes_edge_list = [edge for triangle in self.triangles for edge in triangle.edges]
+        total_edge_list = triangle_edge_list + hexes_edge_list
+        total_edge_list = [edge for edge in total_edge_list if total_edge_list.count(edge) == 1]
+        return total_edge_list
+
+    def plot_data(self, color= "b-"):
+        plottinglist = []
+        for edge in self.edges:
+            el = list(edge)
+            xcoords = [el[0][0]-0.5 * el[0][1], el[1][0]- 0.5 * el[1][1]]
+            ycoords = [0.5*sqrt(3)*el[0][1], 0.5*sqrt(3)*el[1][1]]
+            plottinglist.extend([xcoords, ycoords, color])
+        return plottinglist
 
 def hexagon_maker(x,y):
     down_triangles = [Triangle(x,y, up=False), Triangle(x+1,y+1, up=False), Triangle(x+1,y, up=False)]
