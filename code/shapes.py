@@ -66,10 +66,10 @@ class Triangle:
 class Shape:
     def __init__(self, triangles):
         self.triangles = triangles
-        self.edges = self.edgemaker(self.triangles)
+        self.edges = self.edgemaker()
 
     """ With these functions we instantiate some stuff"""
-    def edgemaker(self, triangles):
+    def edgemaker(self):
         total_edge_list = [edge for triangle in self.triangles for edge in triangle.edges]
         total_edge_list = [edge for edge in total_edge_list if total_edge_list.count(edge) == 1]
         return total_edge_list
@@ -180,7 +180,8 @@ class Shape:
                         if all(triangle not in self.triangles for triangle in new_shape.triangles):
                             possible_config.append([new_shape])
                 #print(" zero loop appending ")
-                bookkeeper.append(possible_config)
+                if bookkeeping:
+                    bookkeeper.append(possible_config)
 
             else:
                 new_possible_config = []
@@ -201,7 +202,8 @@ class Shape:
 
                 possible_config = new_possible_config.copy()
                 #print(possible_config)
-                bookkeeper.append(possible_config)
+                if bookkeeping:
+                    bookkeeper.append(possible_config)
         return bookkeeper if bookkeeping else possible_config
 
     """ With these function we output a list to be put into a plot
@@ -234,6 +236,7 @@ def hexagon_maker(x,y):
     down_triangles = [Triangle(x,y, up=False), Triangle(x+1,y+1, up=False), Triangle(x+1,y, up=False)]
     up_triangles = [Triangle(x,y), Triangle(x,y-1), Triangle(x+1,y)]
     return down_triangles+up_triangles
+
 
 def triangle_of_hexes():
     new_list =  [
