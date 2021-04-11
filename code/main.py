@@ -1,4 +1,4 @@
-from shapes import Triangle, Shape
+from shapes import Triangle, Shape, Hexagon, HShape
 from shapes import hexagon_maker as hexmaker
 from shapes import triangle_of_hexes as toh
 
@@ -21,6 +21,7 @@ def plotting_list_writer(base, type = "corona"):
     plottinglist = []
     if type == "corona":
         coronalist = base.corona_maker(base.orientations())[0]
+        print("im struggling here")
         for shape in coronalist:
             plottinglist.extend(shape.plot_data(color = "g-"))
     elif type == "boundary":
@@ -36,11 +37,12 @@ def plotting_list_writer(base, type = "corona"):
 # S1 = Shape(toh())
 # S1 = Shape(toh() + hexmaker(2,-5) + hexmaker(5, -2) + hexmaker(6, -3))
 # S1 = Shape([triangle for triangle in toh() if triangle not in hexmaker(3,-3)+hexmaker(2,-2)])
-S1 = Shape([triangle for triangle in hexmaker(0,0)+[Triangle(1,1)] if triangle not in [Triangle(0,0)]])
+# S1 = Shape([triangle for triangle in hexmaker(0,0)+[Triangle(1,1)] if triangle not in [Triangle(0,0)]])
+S2 = HShape( [Hexagon(0,0), Hexagon(2,1), Hexagon(3,0)])
 
 """ This has types:
     1) Corona
     2) Boundary
     3) Base
 """
-plotting_list_writer(S1, type = "corona")
+plotting_list_writer(S2, type = "corona")
