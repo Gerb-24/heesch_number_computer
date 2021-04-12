@@ -45,7 +45,8 @@ start_time = time.time()
 # S1 = Shape([triangle for triangle in hexmaker(0,0)+[Triangle(1,1)] if triangle not in [Triangle(0,0)]])
 # S1 = Shape(hexmaker(-1,1)+hexmaker(1,2)+hexmaker(2,1)+hexmaker(1,-1)+hexmaker(-1,-2))
 
-S1 = HShape( [Hexagon(0,0), Hexagon(2,1), Hexagon(3,0)])
+S1 = HShape([Hexagon(0,0, [1, 0, 0, -1, 0, 0])])
+# S1 = HShape( [Hexagon(0,0), Hexagon(2,1), Hexagon(3,0)])
 # S1 = HShape( [hex for hex in bhmaker(0,0) if hex not in [Hexagon(-2,-1), Hexagon(0,0)] ]  )
 # S1 = HShape( bhmaker(0,0)+[Hexagon(-2,2), Hexagon(-2,-4), Hexagon(4,2), Hexagon(0,-3), Hexagon(3,0), Hexagon(4,-1)] )
 

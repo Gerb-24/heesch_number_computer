@@ -26,7 +26,7 @@ class Hexagon:
 
 
     def __eq__(self, other):
-        return self.origin == other.origin
+        return (self.origin == other.origin and self.edgedata == other.edgedata)
 
     def flip(self):
 
@@ -65,13 +65,16 @@ class Hexagon:
         newy = self.origin[1] + yval
         return Hexagon(newx, newy, edgedata = self.edgedata)
 
-    def plot_data(self, color= "b-"):
+    def plot_data(self):
         plottinglist = []
-        for edge in [elem["edge"] for elem in self.edges]:
-            el = list(edge)
+        for elem in self.edges:
+            el = list(elem["edge"])
             xcoords = [el[0][0]-0.5 * el[0][1], el[1][0]- 0.5 * el[1][1]]
             ycoords = [0.5*sqrt(3)*el[0][1], 0.5*sqrt(3)*el[1][1]]
-            plottinglist.extend([xcoords, ycoords, color])
+            if elem["type"] == 0:
+                plottinglist.extend([xcoords, ycoords, "b-"])
+            elif elem["type"] == 1 or elem["type"]  == -1:
+                plottinglist.extend([xcoords, ycoords, "b--"])
         return plottinglist
 
 
@@ -89,7 +92,7 @@ class HShape:
 
     """ With these functions we instantiate some stuff"""
     def edgemaker(self):
-        hexes_edge_list = [edge["edge"] for hex in self.hexes for edge in hex.edges]
+        hexes_edge_list = [edge for hex in self.hexes for edge in hex.edges]
         total_edge_list = [edge for edge in hexes_edge_list if hexes_edge_list.count(edge) == 1]
         return total_edge_list
 
@@ -129,6 +132,9 @@ class HShape:
             new_hexes.append(hex.translate(xval, yval))
         return HShape(new_hexes)
 
+    def translate_rel(self, hex1, hex2):
+        return self.translate(hex1.origin[0] - hex2.origin[0], hex1.origin[1] - hex2.origin[1])
+
     def turn60(self):
         new_hexes = []
         for hex in self.hexes:
@@ -161,6 +167,15 @@ class HShape:
                 config_hexes.extend(shape.hexes)
             return (elem not in config_hexes)
 
+        def edge_filter(edgelist_ns, edgelist_config):
+            config_edges = [edge["edge"] for edge in edgelist_config]
+            ns_edges = [edge["edge"] for edge in edgelist_ns]
+            for i in range(len(ns_edges)):
+                if ns_edges[i] in config_edges:
+                    if not edgelist_ns[i]["type"] == -1 * edgelist[edgelist_edges.index(edge["edge"])]["type"]:
+                        return False
+            print(True)
+            return True
 
         base_orientations_boundaries = [orientation.inside_remover() for orientation in base_orientations ]
         bookkeeper = []
@@ -174,41 +189,47 @@ class HShape:
                 #print("going through the zero loop")
                 for index in range(len(base_orientations)):
                     for elem3 in base_orientations_boundaries[index]:
-                        new_shape = base_orientations[index].translate(elem.origin[0]- elem3.origin[0], elem.origin[1]-elem3.origin[1])
-                        if all(hex not in self.hexes for hex in new_shape.hexes):
+                        new_shape = base_orientations[index].translate_rel(elem, elem3)
+                        if all(hex not in self.hexes for hex in new_shape.hexes) and edge_filter(new_shape.edges, self.edges):
                             possible_config.append([new_shape])
                 #print(" zero loop appending ")
-                bookkeeper.append(possible_config)
-
-            else:
-                new_possible_config = []
-                for config in possible_config:
-                    if not_occupied_in(elem, config):
-                        for index in range(len(base_orientations)):
-                            for elem3 in base_orientations_boundaries[index]:
-                                new_shape = base_orientations[index].translate(elem.origin[0]- elem3.origin[0], elem.origin[1]-elem3.origin[1])
-                                if all(hex not in self.hexes and not_occupied_in(hex, config) for hex in new_shape.hexes):
-                                    new_config = config.copy()
-                                    new_config.append(new_shape)
-                                    new_possible_config.append(new_config)
-                                else:
-                                    continue
-                    else:
-                        #print(f" its occupied in the config? ")
-                        new_possible_config.append(config)
-
-                possible_config = new_possible_config.copy()
-                bookkeeper.append(possible_config)
+                if bookkeeping:
+                    bookkeeper.append(possible_config)
                 print(len(possible_config))
+
+            # else:
+            #     new_possible_config = []
+            #     for config in possible_config:
+            #         if not_occupied_in(elem, config):
+            #             for index in range(len(base_orientations)):
+            #                 for elem3 in base_orientations_boundaries[index]:
+            #                     new_shape = base_orientations[index].translate_rel(elem, elem3)
+            #                     if all(hex not in self.hexes and not_occupied_in(hex, config) for hex in new_shape.hexes):
+            #                         new_config = config.copy()
+            #                         new_config.append(new_shape)
+            #                         new_possible_config.append(new_config)
+            #                     else:
+            #                         continue
+            #         else:
+            #             #print(f" its occupied in the config? ")
+            #             new_possible_config.append(config)
+            #
+            #     possible_config = new_possible_config.copy()
+            #     if bookkeeping:
+            #         bookkeeper.append(possible_config)
+            #     print(len(possible_config))
         return possible_config
 
     def plot_data(self, color= "b-"):
         plottinglist = []
         for edge in self.edges:
-            el = list(edge)
+            el = list(edge["edge"])
             xcoords = [el[0][0]-0.5 * el[0][1], el[1][0]- 0.5 * el[1][1]]
             ycoords = [0.5*sqrt(3)*el[0][1], 0.5*sqrt(3)*el[1][1]]
-            plottinglist.extend([xcoords, ycoords, color])
+            if edge["type"] == 0:
+                plottinglist.extend([xcoords, ycoords, "b-"])
+            elif edge["type"] == 1 or edge["type"]  == -1:
+                plottinglist.extend([xcoords, ycoords, "b--"])
         return plottinglist
 
     def outside_plot_data(self):
