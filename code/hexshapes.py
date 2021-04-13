@@ -48,12 +48,12 @@ class Hexagon:
 
         def edgedata_turn60(edgedata):
             new_edgedata = [
+            edgedata[5],
+            edgedata[0],
             edgedata[1],
             edgedata[2],
             edgedata[3],
             edgedata[4],
-            edgedata[5],
-            edgedata[0],
             ]
             return new_edgedata
 
@@ -150,6 +150,9 @@ class HShape:
         return new_hexes
 
     def outside(self):
+        def rawhexes(hexlist):
+            return [Hexagon(hex.origin[0], hex.origin[1]) for hex in hexlist]
+
         bighexlist = []
         for vert in self.vertmaker():
             bighexlist.extend(bighex_maker(vert[0], vert[1]))
@@ -157,79 +160,86 @@ class HShape:
         for hex in bighexlist:
             if hex not in res:
                 res.append(hex)
-        res = [hex for hex in res if hex not in self.hexes]
+        res = [hex for hex in res if hex not in rawhexes(self.hexes)]
         return res
 
     def corona_maker(self, base_orientations, bookkeeping=False):
-        def not_occupied_in(elem, config):
-            config_hexes = []
+
+        def not_occupied_in(elem, config, extra = False):
+            config_hexes = self.hexes.copy() if extra else []
+
             for shape in config:
                 config_hexes.extend(shape.hexes)
-            return (elem not in config_hexes)
+            for hex in config_hexes:
+                if elem.origin == hex.origin:
+                    return False
+
+            return True
 
         def edge_filter(edgelist_ns, edgelist_config):
             config_edges = [edge["edge"] for edge in edgelist_config]
             ns_edges = [edge["edge"] for edge in edgelist_ns]
             for i in range(len(ns_edges)):
                 if ns_edges[i] in config_edges:
-                    if not edgelist_ns[i]["type"] == -1 * edgelist[edgelist_edges.index(edge["edge"])]["type"]:
+                    if not edgelist_ns[i]["type"] == -1 * edgelist_config[config_edges.index(ns_edges[i])]["type"]:
                         return False
-            print(True)
             return True
 
-        base_orientations_boundaries = [orientation.inside_remover() for orientation in base_orientations ]
+        def config_edgemaker(config):
+            hexes_edge_list = [edge for shape in config+[self] for edge in shape.edges]
+            total_edge_list = [edge for edge in hexes_edge_list if hexes_edge_list.count(edge) == 1]
+            return total_edge_list
+
+        # base_orientations_boundaries = [orientation.inside_remover() for orientation in base_orientations ]
         bookkeeper = []
         possible_config = []
         outside_list = self.outside()
-        #print(f"the outside list length is {len(outside_list)}")
         for i in range(len(outside_list)):
             print(f" we are now at {int((i+1)/len(outside_list)*100)}% ")
-            elem = outside_list[i]
+            outs_hex = outside_list[i]
             if len(possible_config) == 0:
-                #print("going through the zero loop")
                 for index in range(len(base_orientations)):
-                    for elem3 in base_orientations_boundaries[index]:
-                        new_shape = base_orientations[index].translate_rel(elem, elem3)
-                        if all(hex not in self.hexes for hex in new_shape.hexes) and edge_filter(new_shape.edges, self.edges):
+                    for ns_hex in base_orientations[index].hexes:
+                        new_shape = base_orientations[index].translate_rel(outs_hex, ns_hex)
+                        if all(not_occupied_in(hex, [self]) for hex in new_shape.hexes) and edge_filter(new_shape.edges, self.edges):
                             possible_config.append([new_shape])
-                #print(" zero loop appending ")
                 if bookkeeping:
                     bookkeeper.append(possible_config)
                 print(len(possible_config))
 
-            # else:
-            #     new_possible_config = []
-            #     for config in possible_config:
-            #         if not_occupied_in(elem, config):
-            #             for index in range(len(base_orientations)):
-            #                 for elem3 in base_orientations_boundaries[index]:
-            #                     new_shape = base_orientations[index].translate_rel(elem, elem3)
-            #                     if all(hex not in self.hexes and not_occupied_in(hex, config) for hex in new_shape.hexes):
-            #                         new_config = config.copy()
-            #                         new_config.append(new_shape)
-            #                         new_possible_config.append(new_config)
-            #                     else:
-            #                         continue
-            #         else:
-            #             #print(f" its occupied in the config? ")
-            #             new_possible_config.append(config)
-            #
-            #     possible_config = new_possible_config.copy()
-            #     if bookkeeping:
-            #         bookkeeper.append(possible_config)
-            #     print(len(possible_config))
+            else:
+                new_possible_config = []
+                for config in possible_config:
+                    if not_occupied_in(outs_hex, config):
+                        for index in range(len(base_orientations)):
+                            for ns_hex in base_orientations[index].hexes:
+                                new_shape = base_orientations[index].translate_rel(outs_hex, ns_hex)
+                                if all(not_occupied_in(hex, config, extra=True) for hex in new_shape.hexes) and edge_filter(new_shape.edges, config_edgemaker(config)):
+                                    new_config = config.copy()
+                                    new_config.append(new_shape)
+                                    new_possible_config.append(new_config)
+                                else:
+                                    continue
+                    else:
+                        #print(f" its occupied in the config? ")
+                        new_possible_config.append(config)
+
+                possible_config = new_possible_config.copy()
+                if bookkeeping:
+                    bookkeeper.append(possible_config)
+                print(len(possible_config))
         return possible_config
 
-    def plot_data(self, color= "b-"):
+    def plot_data(self, color= "b"):
         plottinglist = []
         for edge in self.edges:
             el = list(edge["edge"])
             xcoords = [el[0][0]-0.5 * el[0][1], el[1][0]- 0.5 * el[1][1]]
             ycoords = [0.5*sqrt(3)*el[0][1], 0.5*sqrt(3)*el[1][1]]
             if edge["type"] == 0:
-                plottinglist.extend([xcoords, ycoords, "b-"])
+                plottinglist.extend([xcoords, ycoords, f"{color}-"])
             elif edge["type"] == 1 or edge["type"]  == -1:
-                plottinglist.extend([xcoords, ycoords, "b--"])
+                plottinglist.extend([xcoords, ycoords, f"r-"])
         return plottinglist
 
     def outside_plot_data(self):

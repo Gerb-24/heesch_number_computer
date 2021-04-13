@@ -23,9 +23,13 @@ def bookkeeper_plotting_list(base):
 def plotting_list_writer(base, type = "corona"):
     plottinglist = []
     if type == "corona":
-        coronalist = base.corona_maker(base.orientations())[0]
+        coronalist = base.corona_maker(base.orientations())[4]
         for shape in coronalist:
-            plottinglist.extend(shape.plot_data(color = "g-"))
+            plottinglist.extend(shape.plot_data(color = "g"))
+    elif type == "outside":
+        plottinglist.extend(base.outside_plot_data())
+
+
     elif type == "boundary":
         for triangle in base.inside_remover():
             plottinglist.extend(triangle.plot_data("g-"))
@@ -45,7 +49,23 @@ start_time = time.time()
 # S1 = Shape([triangle for triangle in hexmaker(0,0)+[Triangle(1,1)] if triangle not in [Triangle(0,0)]])
 # S1 = Shape(hexmaker(-1,1)+hexmaker(1,2)+hexmaker(2,1)+hexmaker(1,-1)+hexmaker(-1,-2))
 
-S1 = HShape([Hexagon(0,0, [1, 0, 0, -1, 0, 0])])
+
+""" edge data testing """
+# S1 = HShape([Hexagon(0,0, [1, 0, 0, -1, 0, 0])])
+
+# H1 = Hexagon(0, 0, [1, 0, 0, 0, 0, 0])
+# H2 = Hexagon(1, 2, [0, 0, -1, 0, 0, 0])
+# S1 = HShape([H1, H2])
+
+S1 = HShape([
+Hexagon(0, 0, [0, 0, 0, 0, -1, 0]),
+Hexagon(1, -1, [0, 0, 0, 0, 0, 1]),
+Hexagon(2, 1),
+Hexagon(3, 0),
+Hexagon(0, -3),
+])
+
+""" hexagon testing """
 # S1 = HShape( [Hexagon(0,0), Hexagon(2,1), Hexagon(3,0)])
 # S1 = HShape( [hex for hex in bhmaker(0,0) if hex not in [Hexagon(-2,-1), Hexagon(0,0)] ]  )
 # S1 = HShape( bhmaker(0,0)+[Hexagon(-2,2), Hexagon(-2,-4), Hexagon(4,2), Hexagon(0,-3), Hexagon(3,0), Hexagon(4,-1)] )
