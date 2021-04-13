@@ -25,6 +25,9 @@ class Hexagon:
         ]
 
 
+    def to_data(self):
+        return [self.origin[0], self.origin[1], self.edgedata]
+
     def __eq__(self, other):
         return (self.origin == other.origin and self.edgedata == other.edgedata)
 
@@ -83,6 +86,9 @@ class HShape:
         self.hexes = hexes
         self.edges = self.edgemaker()
 
+    def to_data(self):
+        return [hex.to_data() for hex in self.hexes]
+
     def __eq__(self, other):
         xmin_s = min([hex.origin[0] for hex in self.hexes])
         ymin_s = min([hex.origin[1] for hex in self.hexes])
@@ -95,6 +101,8 @@ class HShape:
         hexes_edge_list = [edge for hex in self.hexes for edge in hex.edges]
         total_edge_list = [edge for edge in hexes_edge_list if hexes_edge_list.count(edge) == 1]
         return total_edge_list
+
+
 
     def vertmaker(self):
         return [hex.origin for hex in self.hexes]
@@ -223,12 +231,27 @@ class HShape:
                     else:
                         #print(f" its occupied in the config? ")
                         new_possible_config.append(config)
-
+                if new_possible_config == []:
+                    return []
                 possible_config = new_possible_config.copy()
                 if bookkeeping:
                     bookkeeper.append(possible_config)
                 print(len(possible_config))
         return possible_config
+
+    def second_corona(self):
+        next_corona_list = []
+        coronalist = self.corona_maker(self.orientations())
+        for i in range(len(coronalist)):
+            corona = coronalist[i]
+            print(f"CORONA we are now at {int((i+1)/len(coronalist)*100)}% ")
+            new_shape = HShape([hex for shape in corona+[self] for hex in shape.hexes])
+            new_corona = new_shape.corona_maker(self.orientations())
+            if new_corona == []:
+                pass
+            else:
+                next_corona_list.append({"first": corona, "second": new_corona})
+        return next_corona_list
 
     def plot_data(self, color= "b"):
         plottinglist = []
@@ -236,10 +259,11 @@ class HShape:
             el = list(edge["edge"])
             xcoords = [el[0][0]-0.5 * el[0][1], el[1][0]- 0.5 * el[1][1]]
             ycoords = [0.5*sqrt(3)*el[0][1], 0.5*sqrt(3)*el[1][1]]
-            if edge["type"] == 0:
-                plottinglist.extend([xcoords, ycoords, f"{color}-"])
-            elif edge["type"] == 1 or edge["type"]  == -1:
-                plottinglist.extend([xcoords, ycoords, f"r-"])
+            plottinglist.extend([xcoords, ycoords, f"{color}-"])
+            # if edge["type"] == 0:
+            #     plottinglist.extend([xcoords, ycoords, f"{color}-"])
+            # elif edge["type"] == 1 or edge["type"]  == -1:
+            #     plottinglist.extend([xcoords, ycoords, f"r-"])
         return plottinglist
 
     def outside_plot_data(self):
