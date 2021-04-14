@@ -25,8 +25,11 @@ class Hexagon:
         ]
 
 
+    def to_data(self):
+        return [self.origin[0], self.origin[1], self.edgedata]
+
     def __eq__(self, other):
-        return self.origin == other.origin
+        return (self.origin == other.origin and self.edgedata == other.edgedata)
 
     def flip(self):
 
@@ -48,12 +51,12 @@ class Hexagon:
 
         def edgedata_turn60(edgedata):
             new_edgedata = [
+            edgedata[5],
+            edgedata[0],
             edgedata[1],
             edgedata[2],
             edgedata[3],
             edgedata[4],
-            edgedata[5],
-            edgedata[0],
             ]
             return new_edgedata
 
@@ -65,13 +68,16 @@ class Hexagon:
         newy = self.origin[1] + yval
         return Hexagon(newx, newy, edgedata = self.edgedata)
 
-    def plot_data(self, color= "b-"):
+    def plot_data(self):
         plottinglist = []
-        for edge in [elem["edge"] for elem in self.edges]:
-            el = list(edge)
+        for elem in self.edges:
+            el = list(elem["edge"])
             xcoords = [el[0][0]-0.5 * el[0][1], el[1][0]- 0.5 * el[1][1]]
             ycoords = [0.5*sqrt(3)*el[0][1], 0.5*sqrt(3)*el[1][1]]
-            plottinglist.extend([xcoords, ycoords, color])
+            if elem["type"] == 0:
+                plottinglist.extend([xcoords, ycoords, "b-"])
+            elif elem["type"] == 1 or elem["type"]  == -1:
+                plottinglist.extend([xcoords, ycoords, "b--"])
         return plottinglist
 
 
@@ -79,6 +85,9 @@ class HShape:
     def __init__(self, hexes):
         self.hexes = hexes
         self.edges = self.edgemaker()
+
+    def to_data(self):
+        return [hex.to_data() for hex in self.hexes]
 
     def __eq__(self, other):
         xmin_s = min([hex.origin[0] for hex in self.hexes])
@@ -89,9 +98,11 @@ class HShape:
 
     """ With these functions we instantiate some stuff"""
     def edgemaker(self):
-        hexes_edge_list = [edge["edge"] for hex in self.hexes for edge in hex.edges]
+        hexes_edge_list = [edge for hex in self.hexes for edge in hex.edges]
         total_edge_list = [edge for edge in hexes_edge_list if hexes_edge_list.count(edge) == 1]
         return total_edge_list
+
+
 
     def vertmaker(self):
         return [hex.origin for hex in self.hexes]
@@ -129,6 +140,9 @@ class HShape:
             new_hexes.append(hex.translate(xval, yval))
         return HShape(new_hexes)
 
+    def translate_rel(self, hex1, hex2):
+        return self.translate(hex1.origin[0] - hex2.origin[0], hex1.origin[1] - hex2.origin[1])
+
     def turn60(self):
         new_hexes = []
         for hex in self.hexes:
@@ -144,6 +158,9 @@ class HShape:
         return new_hexes
 
     def outside(self):
+        def rawhexes(hexlist):
+            return [Hexagon(hex.origin[0], hex.origin[1]) for hex in hexlist]
+
         bighexlist = []
         for vert in self.vertmaker():
             bighexlist.extend(bighex_maker(vert[0], vert[1]))
@@ -151,43 +168,61 @@ class HShape:
         for hex in bighexlist:
             if hex not in res:
                 res.append(hex)
-        res = [hex for hex in res if hex not in self.hexes]
+        res = [hex for hex in res if hex not in rawhexes(self.hexes)]
         return res
 
-    def corona_maker(self, base_orientations, bookkeeping=False):
-        def not_occupied_in(elem, config):
-            config_hexes = []
+    def corona_maker(self, base_orientations, bookkeeping=False, heesch=False):
+
+        def not_occupied_in(elem, config, extra = False):
+            config_hexes = self.hexes.copy() if extra else []
+
             for shape in config:
                 config_hexes.extend(shape.hexes)
-            return (elem not in config_hexes)
+            for hex in config_hexes:
+                if elem.origin == hex.origin:
+                    return False
 
+            return True
 
-        base_orientations_boundaries = [orientation.inside_remover() for orientation in base_orientations ]
+        def edge_filter(edgelist_ns, edgelist_config):
+            config_edges = [edge["edge"] for edge in edgelist_config]
+            ns_edges = [edge["edge"] for edge in edgelist_ns]
+            for i in range(len(ns_edges)):
+                if ns_edges[i] in config_edges:
+                    if not edgelist_ns[i]["type"] == -1 * edgelist_config[config_edges.index(ns_edges[i])]["type"]:
+                        return False
+            return True
+
+        def config_edgemaker(config):
+            hexes_edge_list = [edge for shape in config+[self] for edge in shape.edges]
+            total_edge_list = [edge for edge in hexes_edge_list if hexes_edge_list.count(edge) == 1]
+            return total_edge_list
+
+        # base_orientations_boundaries = [orientation.inside_remover() for orientation in base_orientations ]
         bookkeeper = []
         possible_config = []
         outside_list = self.outside()
-        #print(f"the outside list length is {len(outside_list)}")
         for i in range(len(outside_list)):
             print(f" we are now at {int((i+1)/len(outside_list)*100)}% ")
-            elem = outside_list[i]
+            outs_hex = outside_list[i]
             if len(possible_config) == 0:
-                #print("going through the zero loop")
                 for index in range(len(base_orientations)):
-                    for elem3 in base_orientations_boundaries[index]:
-                        new_shape = base_orientations[index].translate(elem.origin[0]- elem3.origin[0], elem.origin[1]-elem3.origin[1])
-                        if all(hex not in self.hexes for hex in new_shape.hexes):
+                    for ns_hex in base_orientations[index].hexes:
+                        new_shape = base_orientations[index].translate_rel(outs_hex, ns_hex)
+                        if all(not_occupied_in(hex, [self]) for hex in new_shape.hexes) and edge_filter(new_shape.edges, self.edges):
                             possible_config.append([new_shape])
-                #print(" zero loop appending ")
-                bookkeeper.append(possible_config)
+                if bookkeeping:
+                    bookkeeper.append(possible_config)
+                print(len(possible_config))
 
             else:
                 new_possible_config = []
                 for config in possible_config:
-                    if not_occupied_in(elem, config):
+                    if not_occupied_in(outs_hex, config):
                         for index in range(len(base_orientations)):
-                            for elem3 in base_orientations_boundaries[index]:
-                                new_shape = base_orientations[index].translate(elem.origin[0]- elem3.origin[0], elem.origin[1]-elem3.origin[1])
-                                if all(hex not in self.hexes and not_occupied_in(hex, config) for hex in new_shape.hexes):
+                            for ns_hex in base_orientations[index].hexes:
+                                new_shape = base_orientations[index].translate_rel(outs_hex, ns_hex)
+                                if all(not_occupied_in(hex, config, extra=True) for hex in new_shape.hexes) and edge_filter(new_shape.edges, config_edgemaker(config)):
                                     new_config = config.copy()
                                     new_config.append(new_shape)
                                     new_possible_config.append(new_config)
@@ -196,19 +231,79 @@ class HShape:
                     else:
                         #print(f" its occupied in the config? ")
                         new_possible_config.append(config)
-
+                if new_possible_config == []:
+                    return []
                 possible_config = new_possible_config.copy()
-                bookkeeper.append(possible_config)
+                if bookkeeping:
+                    bookkeeper.append(possible_config)
                 print(len(possible_config))
-        return possible_config
+        return [[config] for config in possible_config] if heesch else possible_config
 
-    def plot_data(self, color= "b-"):
+    def second_corona(self):
+        next_corona_list = []
+        coronalist = self.corona_maker(self.orientations())
+        for i in range(len(coronalist)):
+            corona = coronalist[i]
+            print(f"CORONA we are now at {int((i+1)/len(coronalist)*100)}% ")
+            new_shape = HShape([hex for shape in corona+[self] for hex in shape.hexes])
+            new_corona = new_shape.corona_maker(self.orientations())
+            if new_corona == []:
+                pass
+            else:
+                next_corona_list.append({"first": corona, "second": new_corona})
+        return next_corona_list
+
+    """ For computing Heesch numbers """
+
+    def heesch_corona(self, coronalist):
+        next_corona_list = []
+        for i in range(len(coronalist)):
+            print(f" we are now at {int((i+1)/len(coronalist)*100)}% ")
+            corona_config = coronalist[i]
+            ns_hexes = self.hexes.copy()
+            for corona in corona_config:
+                for shape in corona:
+                    ns_hexes.extend(shape.hexes)
+            new_shape = HShape(ns_hexes)
+            new_corona = new_shape.corona_maker(self.orientations())
+
+            for elem in new_corona:
+                new_corona_config = corona_config.copy()
+                new_corona_config.append(elem)
+                next_corona_list.append(new_corona_config)
+        return next_corona_list
+
+    def heesch_computer(self):
+        coronalist = self.corona_maker(self.orientations(), heesch=True)
+        if coronalist == []:
+            return []
+        else:
+            i = 0
+            while True:
+                message = f"""
+                --------------------------------------
+                We are now computing the {i+2}nd corona
+                --------------------------------------
+                """
+                print(message)
+                new_corona_list = self.heesch_corona(coronalist)
+                if new_corona_list == []:
+                    print(f" The heesch number is {i+1}")
+                    return coronalist
+                else:
+                    coronalist = new_corona_list.copy()
+                    i += 1
+    def plot_data(self, color= "b"):
         plottinglist = []
         for edge in self.edges:
-            el = list(edge)
+            el = list(edge["edge"])
             xcoords = [el[0][0]-0.5 * el[0][1], el[1][0]- 0.5 * el[1][1]]
             ycoords = [0.5*sqrt(3)*el[0][1], 0.5*sqrt(3)*el[1][1]]
-            plottinglist.extend([xcoords, ycoords, color])
+            plottinglist.extend([xcoords, ycoords, f"{color}-"])
+            # if edge["type"] == 0:
+            #     plottinglist.extend([xcoords, ycoords, f"{color}-"])
+            # elif edge["type"] == 1 or edge["type"]  == -1:
+            #     plottinglist.extend([xcoords, ycoords, f"r-"])
         return plottinglist
 
     def outside_plot_data(self):
