@@ -47,7 +47,14 @@ start_time = time.time()
 
 
 """ edge data testing """
-S1 = HShape([Hexagon(0,0, [1, 1, 1, 0, -1, -1])])
+# S1 = HShape([Hexagon(0,0, [1, 1, 1, 0, -1, -1])])
+
+S1 = HShape([
+Hexagon(0, 0, [0, 0, 0, 1, -1, 0]),
+Hexagon(1, -1),
+Hexagon(2, 1),
+Hexagon(3, 0),
+])
 
 # H1 = Hexagon(0, 0, [1, 0, 0, 0, 0, 0])
 # H2 = Hexagon(1, 2, [0, 0, -1, 0, 0, 0])
@@ -72,5 +79,5 @@ S1 = HShape([Hexagon(0,0, [1, 1, 1, 0, -1, -1])])
     2) Boundary
     3) Base
 """
-data_writer(S1, type = "heesch")
+data_writer(S1, type = "corona")
 print("--- %s seconds ---" % (time.time() - start_time))
