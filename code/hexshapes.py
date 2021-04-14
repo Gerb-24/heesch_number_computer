@@ -82,9 +82,10 @@ class Hexagon:
 
 
 class HShape:
-    def __init__(self, hexes):
+    def __init__(self, hexes, priority = []):
         self.hexes = hexes
         self.edges = self.edgemaker()
+        self.priority = priority
 
     def to_data(self):
         return [hex.to_data() for hex in self.hexes]
@@ -138,7 +139,11 @@ class HShape:
         new_hexes = []
         for hex in self.hexes:
             new_hexes.append(hex.translate(xval, yval))
-        return HShape(new_hexes)
+
+        new_priority = []
+        for hex in self.priority:
+            new_priority.append(hex.translate(xval, yval))
+        return HShape(new_hexes, new_priority)
 
     def translate_rel(self, hex1, hex2):
         return self.translate(hex1.origin[0] - hex2.origin[0], hex1.origin[1] - hex2.origin[1])
@@ -147,7 +152,10 @@ class HShape:
         new_hexes = []
         for hex in self.hexes:
             new_hexes.append(hex.turn60())
-        return HShape(new_hexes)
+        new_priority = []
+        for hex in self.priority:
+            new_priority.append(hex.turn60())
+        return HShape(new_hexes, new_priority)
 
     def inside_remover(self):
         inside_list = []
@@ -164,7 +172,7 @@ class HShape:
         bighexlist = []
         for vert in self.vertmaker():
             bighexlist.extend(bighex_maker(vert[0], vert[1]))
-        res = []
+        res = self.priority.copy()
         for hex in bighexlist:
             if hex not in res:
                 res.append(hex)
@@ -245,7 +253,13 @@ class HShape:
         for i in range(len(coronalist)):
             corona = coronalist[i]
             print(f"CORONA we are now at {int((i+1)/len(coronalist)*100)}% ")
-            new_shape = HShape([hex for shape in corona+[self] for hex in shape.hexes])
+            pre_priority = [hex for shape in corona+[self] for hex in shape.priority]
+            priority = []
+            for hex in  pre_priority:
+                if hex not in priority:
+                    priority.append(hex)
+            new_shape = HShape([hex for shape in corona+[self] for hex in shape.hexes],
+            priority = priority)
             new_corona = new_shape.corona_maker(self.orientations())
             if new_corona == []:
                 pass

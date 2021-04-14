@@ -49,12 +49,40 @@ start_time = time.time()
 """ edge data testing """
 # S1 = HShape([Hexagon(0,0, [1, 1, 1, 0, -1, -1])])
 
-S1 = HShape([
-Hexagon(0, 0, [0, 0, 0, 1, -1, 0]),
-Hexagon(1, -1),
-Hexagon(2, 1),
-Hexagon(3, 0),
-])
+"""4hex H2
+takes too long"""
+
+# priority = [
+# Hexagon(-1, 1),
+# Hexagon(1, 2),
+# ]
+#
+# S1 = HShape([
+# Hexagon(0, 0, [0, 0, 0, 1, -1, 0]),
+# Hexagon(1, -1),
+# Hexagon(2, 1),
+# Hexagon(3, 0),
+# ],
+# priority = priority
+# )
+
+"""3hex H2
+computes in 13 sec"""
+
+# S1 = HShape(
+# [Hexagon(0, 0, [0, 0, 0, -1, 0, -1]),
+# Hexagon(2, 1, [0, 0, 1, 0, 0, 0]),
+# Hexagon(1, -1)],
+#
+# )
+
+""" 2-hexapillar
+computes in 323 sec"""
+S1 = HShape(
+[Hexagon(0, 0, [1, 1, 0, -1, -1, 0]),
+Hexagon(2, 1, [1, 1, -1, -1, -1, 0])],
+
+)
 
 # H1 = Hexagon(0, 0, [1, 0, 0, 0, 0, 0])
 # H2 = Hexagon(1, 2, [0, 0, -1, 0, 0, 0])
@@ -79,5 +107,5 @@ Hexagon(3, 0),
     2) Boundary
     3) Base
 """
-data_writer(S1, type = "corona")
+data_writer(S1, type = "heesch")
 print("--- %s seconds ---" % (time.time() - start_time))
