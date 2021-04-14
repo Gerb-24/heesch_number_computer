@@ -46,6 +46,20 @@ elif data["type"] == "corona":
     shapedrawer(base, axs, "turquoise")
     plottinglist.extend(base.plot_data("k"))
 
+elif data["type"] == "heesch":
+    heesch_data = data["data"]["heesch"]
+    for index in range(len(heesch_data)):
+        corona = heesch_data[index]
+        for pre_shape in corona:
+            shape = HShape( [Hexagon(*elem) for elem in pre_shape] )
+            color = "lightseagreen" if index%2 == 0 else "aquamarine"
+            shapedrawer(shape, axs, color)
+            plottinglist.extend(shape.plot_data("k"))
+
+    base = HShape( [Hexagon(*elem) for elem in data["data"]["base"]])
+    shapedrawer(base, axs, "aquamarine")
+    plottinglist.extend(base.plot_data("k"))
+
 elif data["type"] == "corona2":
     first = data["data"]["first"]
     for pre_shape in first:

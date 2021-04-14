@@ -7,7 +7,14 @@ import time
 
 def data_writer(base, type = "corona"):
     with open('./code/plotlist.txt', 'w') as file:
-        if type == "corona2":
+        if type == "heesch":
+            coronalist = base.heesch_computer()[0]
+            coronadata = []
+            for corona_config in coronalist:
+                coronadata.append([shape.to_data() for shape in corona_config])
+            datadict = {"type": type, "num": len(coronalist), "data": {"base": base.to_data(), "heesch": coronadata}}
+
+        elif type == "corona2":
             coronalist = base.second_corona()[0]
             first_data = []
             for shape in coronalist["first"]:
@@ -65,5 +72,5 @@ S1 = HShape([Hexagon(0,0, [1, 1, 1, 0, -1, -1])])
     2) Boundary
     3) Base
 """
-data_writer(S1, type = "corona2")
+data_writer(S1, type = "heesch")
 print("--- %s seconds ---" % (time.time() - start_time))

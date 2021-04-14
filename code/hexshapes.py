@@ -171,7 +171,7 @@ class HShape:
         res = [hex for hex in res if hex not in rawhexes(self.hexes)]
         return res
 
-    def corona_maker(self, base_orientations, bookkeeping=False):
+    def corona_maker(self, base_orientations, bookkeeping=False, heesch=False):
 
         def not_occupied_in(elem, config, extra = False):
             config_hexes = self.hexes.copy() if extra else []
@@ -237,7 +237,7 @@ class HShape:
                 if bookkeeping:
                     bookkeeper.append(possible_config)
                 print(len(possible_config))
-        return possible_config
+        return [[config] for config in possible_config] if heesch else possible_config
 
     def second_corona(self):
         next_corona_list = []
@@ -253,6 +253,46 @@ class HShape:
                 next_corona_list.append({"first": corona, "second": new_corona})
         return next_corona_list
 
+    """ For computing Heesch numbers """
+
+    def heesch_corona(self, coronalist):
+        next_corona_list = []
+        for i in range(len(coronalist)):
+            print(f" we are now at {int((i+1)/len(coronalist)*100)}% ")
+            corona_config = coronalist[i]
+            ns_hexes = self.hexes.copy()
+            for corona in corona_config:
+                for shape in corona:
+                    ns_hexes.extend(shape.hexes)
+            new_shape = HShape(ns_hexes)
+            new_corona = new_shape.corona_maker(self.orientations())
+
+            for elem in new_corona:
+                new_corona_config = corona_config.copy()
+                new_corona_config.append(elem)
+                next_corona_list.append(new_corona_config)
+        return next_corona_list
+
+    def heesch_computer(self):
+        coronalist = self.corona_maker(self.orientations(), heesch=True)
+        if coronalist == []:
+            return []
+        else:
+            i = 0
+            while True:
+                message = f"""
+                --------------------------------------
+                We are now computing the {i+2}nd corona
+                --------------------------------------
+                """
+                print(message)
+                new_corona_list = self.heesch_corona(coronalist)
+                if new_corona_list == []:
+                    print(f" The heesch number is {i+1}")
+                    return coronalist
+                else:
+                    coronalist = new_corona_list.copy()
+                    i += 1
     def plot_data(self, color= "b"):
         plottinglist = []
         for edge in self.edges:
