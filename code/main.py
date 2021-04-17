@@ -6,7 +6,7 @@ from hexshapes import bighex_maker as bhmaker
 import time
 
 def data_writer(base, type = "corona"):
-    with open('./code/plotlist.txt', 'w') as file:
+    with open('./plotlist.txt', 'w') as file:
         if type == "heesch":
             coronalist = base.heesch_computer()[0]
             coronadata = []
