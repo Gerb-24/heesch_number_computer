@@ -293,6 +293,8 @@ class HShape:
                 else:
                     coronalist = new_corona_list.copy()
                     i += 1
+
+
     def plot_data(self, color= "b"):
         plottinglist = []
         for edge in self.edges:
