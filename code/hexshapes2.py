@@ -1,5 +1,5 @@
 from math import sqrt
-
+import numpy as np
 
 class Hexagon:
     def __init__(self, x, y, edgedata = [0, 0, 0, 0, 0, 0]):
@@ -82,10 +82,11 @@ class Hexagon:
 
 
 class HShape:
-    def __init__(self, hexes, priority = []):
+    def __init__(self, hexes, priority = [], shapecode = {"translation": np.array([0,0]),"flipped": False,  "rotation": 0}):
         self.hexes = hexes
         self.edges = self.edgemaker()
         self.priority = priority
+        self.shapecode = shapecode
 
     def to_data(self):
         return [hex.to_data() for hex in self.hexes]
@@ -103,12 +104,10 @@ class HShape:
         total_edge_list = [edge for edge in hexes_edge_list if hexes_edge_list.count(edge) == 1]
         return total_edge_list
 
-
-
     def vertmaker(self):
         return [hex.origin for hex in self.hexes]
 
-    def orientations(self):
+    def orientations(self, equality = False):
         orientation_list =[
         self,
         self.turn60(),
@@ -123,27 +122,62 @@ class HShape:
         self.flip().turn60().turn60().turn60().turn60(),
         self.flip().turn60().turn60().turn60().turn60().turn60(),
         ]
-        new_orientations_list = []
-        for orientation in orientation_list:
-            if orientation not in new_orientations_list:
-                new_orientations_list.append(orientation)
-        return new_orientations_list
+
+        if equality:
+            representatives = []
+            equality_list = []
+            for i in range(len(orientation_list)):
+                orientation = orientation_list[i]
+                if i == 0:
+                    representatives.append(orientation)
+                    equality_list.append([orientation.shapecode])
+                else:
+                    for j in range( len( representatives ) ):
+                        if orientation == representatives[j]:
+                            equality_list[j].append(orientation.shapecode)
+                            break
+                        if j == len( representatives )-1:
+                            representatives.append(orientation)
+                            equality_list.append([orientation.shapecode])
+            return equality_list
+        else:
+            new_orientations_list = []
+            for orientation in orientation_list:
+                if orientation not in new_orientations_list:
+                    new_orientations_list.append(orientation)
+            return new_orientations_list
 
     def flip(self):
         new_hexes = []
         for hex in self.hexes:
             new_hexes.append(hex.flip())
-        return HShape(new_hexes)
+
+        new_shapecode = {
+        "translation": self.shapecode["translation"],
+        "flipped": not self.shapecode["flipped"],
+        "rotation": self.shapecode["rotation"],
+        }
+
+
+        return HShape(new_hexes, priority = self.priority, shapecode = new_shapecode)
 
     def translate(self, xval, yval):
         new_hexes = []
         for hex in self.hexes:
             new_hexes.append(hex.translate(xval, yval))
 
+
         new_priority = []
         for hex in self.priority:
             new_priority.append(hex.translate(xval, yval))
-        return HShape(new_hexes, new_priority)
+
+        new_shapecode = {
+        "translation": self.shapecode["translation"] + np.array([xval, yval]),
+        "flipped": self.shapecode["flipped"],
+        "rotation": self.shapecode["rotation"],
+        }
+
+        return HShape(new_hexes, priority = new_priority, shapecode = new_shapecode)
 
     def translate_rel(self, hex1, hex2):
         return self.translate(hex1.origin[0] - hex2.origin[0], hex1.origin[1] - hex2.origin[1])
@@ -155,7 +189,13 @@ class HShape:
         new_priority = []
         for hex in self.priority:
             new_priority.append(hex.turn60())
-        return HShape(new_hexes, new_priority)
+
+        new_shapecode = {
+        "translation": self.shapecode["translation"],
+        "flipped": self.shapecode["flipped"],
+        "rotation": (self.shapecode["rotation"]+60) % 360,
+        }
+        return HShape(new_hexes, priority = new_priority, shapecode = new_shapecode)
 
     def inside_remover(self):
         inside_list = []
@@ -307,6 +347,8 @@ class HShape:
                 else:
                     coronalist = new_corona_list.copy()
                     i += 1
+
+
     def plot_data(self, color= "b"):
         plottinglist = []
         for edge in self.edges:

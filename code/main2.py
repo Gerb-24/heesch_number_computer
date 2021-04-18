@@ -26,7 +26,7 @@ def shapedrawer(shape, axes, color):
                 coord = (coord[0]+2/3*np.cos(i*1/6*2*np.pi-1/2*np.pi), coord[1]+2/3*np.sin(i*1/6*2*np.pi-1/2*np.pi))
                 circle = Circle(coord, radius = 1/16, color="w")
                 axes.add_patch(circle)
-with open('./code/plotlist.txt', 'r') as text:
+with open('./plotlist.txt', 'r') as text:
     data = ast.literal_eval(text.readline())
 
 axs = plt.subplot()

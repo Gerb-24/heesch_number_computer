@@ -1,9 +1,17 @@
-from hexshapes import Hexagon, HShape
-import ast
+from squareshapes import Square
 import matplotlib.pyplot as plt
-from matplotlib.patches import RegularPolygon, Circle
 
-import numpy as np
+def plotter(plottinglist):
+    axs = plt.subplot()
+    axs.plot(*(plottinglist), linewidth=0.3)
+    plt.autoscale(enable = True)
+    axs.set_aspect("equal")
+    plt.axis('off')
+    plt.show()
 
-S1 = HShape([Hexagon(0,0, [1, 1, 1, 0, -1, -1])])
-print(S1.heesch_computer())
+square = Square(2,4)
+
+plottinglist = []
+plottinglist.extend(square.plot_data())
+
+plotter(plottinglist)
