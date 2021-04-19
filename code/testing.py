@@ -2,6 +2,7 @@ from squareshapes import Square, Polyomino
 import matplotlib.pyplot as plt
 from matplotlib.patches import RegularPolygon
 import numpy as np
+import time
 
 def plotter(plottinglist, patches):
     axs = plt.subplot()
@@ -13,44 +14,46 @@ def plotter(plottinglist, patches):
     plt.axis('off')
     plt.show()
 
+start_time = time.time()
+
 plottinglist = []
 patches = []
 
 """ Good testing H1 tile """
-# tile = Polyomino(
-# [
-# Square(0,0),
-# Square(2,0),
-# Square(4,0),
-# Square(6,0),
-# Square(4,2),
-# Square(4,4),
-# Square(4,-2),
-# ]
-# )
-
-""" Tile 2 with H2"""
-priority = [
-Square(2,0),
-Square(4,6),
-]
-
 tile = Polyomino(
 [
 Square(0,0),
-Square(0,2),
-Square(0,4),
-Square(0,6),
-Square(-2,4),
-Square(2,2),
-Square(2,4),
-Square(2,6),
+Square(2,0),
 Square(4,0),
+Square(6,0),
 Square(4,2),
-Square(4,6),
-],
-priority = priority
+Square(4,4),
+Square(4,-2),
+]
 )
+
+""" Tile 2 with H2"""
+# priority = [
+# Square(2,0),
+# Square(4,6),
+# ]
+#
+# tile = Polyomino(
+# [
+# Square(0,0),
+# Square(0,2),
+# Square(0,4),
+# Square(0,6),
+# Square(-2,4),
+# Square(2,2),
+# Square(2,4),
+# Square(2,6),
+# Square(4,0),
+# Square(4,2),
+# Square(4,6),
+# ],
+# priority = priority
+# )
 
 coronalist = tile.heesch_computer()[0]
 for index in range(len(coronalist)):
@@ -75,4 +78,6 @@ for square in tile.squares:
     color = "lightseagreen"
     plot_square = RegularPolygon(square.origin, numVertices=4 ,orientation = 1/4 *np.pi, radius= np.sqrt(2), alpha=1, color= color)
     patches.append(plot_square)
+
+print("--- %s seconds ---" % (time.time() - start_time))
 plotter(plottinglist, patches)

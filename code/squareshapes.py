@@ -34,8 +34,6 @@ class Square:
             plottinglist.extend([xcoords, ycoords, "b-"])
         return plottinglist
 
-
-
     def translate(self, xval, yval):
         newx = self.origin[0] + xval
         newy = self.origin[1] + yval
@@ -90,10 +88,35 @@ class Square:
     #     newy = self.origin[1] + yval
     #     return squareagon(newx, newy, edgedata = self.edgedata)
 
+class FakePolyomino:
+    def __init__(self, squares, shapecode = {"translation": (0, 0),"flipped": False,  "rotation": 0}):
+        self.squares = squares
+        self.shapecode = shapecode
+
+    def rot_90(self):
+        new_squares = []
+        for square in self.squares:
+            new_squares.append(square.rot_90())
+
+        new_translation = (-self.shapecode["translation"][1],
+        self.shapecode["translation"][0])
+
+        new_flipped = self.shapecode["flipped"]
+        new_rotation = (self.shapecode["rotation"]+90) % 360
+
+        new_shapecode = {
+        "translation": new_translation,
+        "flipped": new_flipped,
+        "rotation": new_rotation
+        }
+
+        return FakePolyomino(new_squares, shapecode = new_shapecode)
+
+
 class Polyomino:
     """ These will be polyominoes"""
 
-    def __init__(self, squares, priority = []):
+    def __init__(self, squares, priority = [], shapecode = {"translation": (0, 0),"flipped": False,  "rotation": 0}, collision_data = []):
         def edgemaker():
             square_edge_list = [edge for square in self.squares for edge in square.edges]
             total_edge_list = [edge for edge in square_edge_list if square_edge_list.count(edge) == 1]
@@ -102,16 +125,69 @@ class Polyomino:
         self.squares = squares
         self.edges = edgemaker()
         self.priority = priority
+        self.shapecode = shapecode
+        self.collision_data = self.collisions() if collision_data == [] else collision_data
 
     def __eq__(self, other):
-        xmin_s = min([square.origin[0] for square in self.squares])
-        ymin_s = min([square.origin[1] for square in self.squares])
-        xmin_o = min([square.origin[0] for square in other.squares])
-        ymin_o = min([square.origin[1] for square in other.squares])
-        for square in self.squares:
-            if square not in other.translate(xmin_s-xmin_o,ymin_s-ymin_o).squares:
-                return False
-        return True
+        """ we assume here that there is the tile is not mirror symmetric or rotationtionally symmetric"""
+        # translation_equal = np.array_equal(self.shapecode["translation"], other.shapecode["translation"])
+        # flipped_equal = self.shapecode["flipped"] == other.shapecode["flipped"]
+        # rotation_equal = self.shapecode["rotation"] == other.shapecode["rotation"]
+        # shape_equal = translation_equal and flipped_equal and rotation_equal
+        return self.shapecode == other.shapecode
+
+    def orientations(self, fake = False):
+        orientation_list =[
+        self,
+        self.rot_90(fake = fake),
+        self.rot_90(fake = fake).rot_90(),
+        self.rot_90(fake = fake).rot_90().rot_90(),
+        self.flip(fake = fake),
+        self.flip(fake = fake).rot_90(),
+        self.flip(fake = fake).rot_90().rot_90(),
+        self.flip(fake = fake).rot_90().rot_90().rot_90(),
+        ]
+
+        new_orientations_list = []
+        for orientation in orientation_list:
+            if orientation not in new_orientations_list:
+                new_orientations_list.append(orientation)
+        return new_orientations_list
+
+    def collisions(self):
+        collision_dict = {
+        0: set(),
+        1: set(),
+        2: set(),
+        3: set(),
+        4: set(),
+        5: set(),
+        6: set(),
+        7: set(),
+        }
+
+        key_dict = {
+        "0F": 0,
+        "90F": 1,
+        "180F": 2,
+        "270F": 3,
+        "0T": 4,
+        "90T": 5,
+        "180T": 6,
+        "270T": 7,
+        }
+
+        for orientation in self.orientations(fake = True):
+            pre_key = f"""{orientation.shapecode["rotation"]}{"T" if orientation.shapecode["flipped"] else "F"}"""
+            key = key_dict[pre_key]
+            for or_square in orientation.squares:
+                for base_square in self.squares:
+                    coord = (
+                    base_square.origin[0] - or_square.origin[0],
+                    base_square.origin[1] - or_square.origin[1],
+                    )
+                    collision_dict[key].add(coord)
+        return collision_dict
 
     def vertmaker(self):
         return [square.origin for square in self.squares]
@@ -120,25 +196,99 @@ class Polyomino:
         new_squares = []
         for square in self.squares:
             new_squares.append(square.translate(xval, yval))
-        return Polyomino(new_squares)
+
+        new_translation = (self.shapecode["translation"][0] + xval,
+        self.shapecode["translation"][1] + yval)
+
+        new_flipped = self.shapecode["flipped"]
+        new_rotation = self.shapecode["rotation"]
+
+        new_shapecode = {
+        "translation": new_translation,
+        "flipped": new_flipped,
+        "rotation": new_rotation
+        }
+
+        new_collision_data = {}
+        for index in range(8):
+            new_collision_data[index] = {(coord[0]+xval, coord[1]+yval) for coord in self.collision_data[index]}
+
+        return Polyomino(new_squares, shapecode = new_shapecode, collision_data = new_collision_data)
 
     def translate_rel(self, square1, square2):
         return self.translate(square1.origin[0] - square2.origin[0], square1.origin[1] - square2.origin[1])
 
-    def rot_90(self):
+    def rot_90(self, fake = False):
         new_squares = []
         for square in self.squares:
             new_squares.append(square.rot_90())
-        return Polyomino(new_squares)
 
-    def flip(self):
+        new_translation = (-self.shapecode["translation"][1],
+        self.shapecode["translation"][0])
+
+        new_flipped = self.shapecode["flipped"]
+        new_rotation = (self.shapecode["rotation"]+90) % 360
+
+        new_shapecode = {
+        "translation": new_translation,
+        "flipped": new_flipped,
+        "rotation": new_rotation
+        }
+
+        if fake:
+            return FakePolyomino(new_squares, shapecode = new_shapecode)
+        else:
+            new_collision_data = {}
+            for i in range(8):
+                if i < 4:
+                    new_collision_data[i] = {(-coord[1], coord[0]) for coord in self.collision_data[ (i+3) % 4]}
+                elif i <8:
+                    new_collision_data[i] = {(-coord[1], coord[0]) for coord in self.collision_data[ ((i+3) % 4)+4]}
+
+            return Polyomino(new_squares, shapecode = new_shapecode, collision_data = new_collision_data)
+
+    def flip(self, fake = False):
         new_squares = []
         for square in self.squares:
             new_squares.append(square.flip())
-        return Polyomino(new_squares)
+
+        new_translation = (
+        -self.shapecode["translation"][0],
+        self.shapecode["translation"][1])
+
+        new_flipped = not self.shapecode["flipped"]
+        new_rotation = self.shapecode["rotation"]
+
+        new_shapecode = {
+        "translation": new_translation,
+        "flipped": new_flipped,
+        "rotation": new_rotation
+        }
+
+        if fake:
+            return FakePolyomino(new_squares, shapecode = new_shapecode)
+        else:
+            new_collision_data = {}
+            for i in range(8):
+                if i < 4:
+                    new_collision_data[i] = {(-coord[0], coord[1]) for coord in self.collision_data[ 7 - ((i+3) % 4)]}
+                elif i < 8:
+                    new_collision_data[i] = {(-coord[0], coord[1]) for coord in self.collision_data[ (8 - i) % 4]}
+
+            return Polyomino(new_squares, shapecode = new_shapecode, collision_data = new_collision_data)
 
 
-    def corona_maker(self, base_orientations, bookkeeping=False, heesch=False, printing=True):
+
+        return Polyomino(new_squares, shapecode = new_shapecode)
+
+
+    def corona_maker(self, base_orientations, heesch=False, printing=True):
+        def config_collision(config):
+            collision_dict = self.collision_data
+            for shape in config:
+                for or_index in range(8):
+                    collision_dict[or_index].union(shape.collision_data[or_index])
+            return collision_dict
 
         def not_occupied_in(elem, config, extra = False):
             config_squares = self.squares.copy() if extra else []
@@ -147,27 +297,39 @@ class Polyomino:
                 config_squares.extend(shape.squares)
             for square in config_squares:
                 if np.array_equal(elem.origin, square.origin):
+                    print("occupied")
                     return False
 
             return True
 
-        # base_orientations_boundaries = [orientation.inside_remover() for orientation in base_orientations ]
-        bookkeeper = []
+
+        key_dict = {
+        "0F": 0,
+        "90F": 1,
+        "180F": 2,
+        "270F": 3,
+        "0T": 4,
+        "90T": 5,
+        "180T": 6,
+        "270T": 7,
+        }
+
         possible_config = []
         outside_list = self.outside()
-        for i in range(len(outside_list)):
-            if heesch:
-                message = f" \r we are now at {int((i+1)/len(outside_list)*100)}% "
-                print(message, end="")
+        # for i in range(len(outside_list)):
+        for i in range(2):
+            # if printing:
+            #     message = f" \r we are now at {int((i+1)/len(outside_list)*100)}% "
+            #     print(message, end="")
             outs_square = outside_list[i]
             if len(possible_config) == 0:
                 for index in range(len(base_orientations)):
-                    for ns_square in base_orientations[index].squares:
-                        new_shape = base_orientations[index].translate_rel(outs_square, ns_square)
-                        if all(not_occupied_in(square, [self]) for square in new_shape.squares):
-                            possible_config.append([new_shape])
-                if bookkeeping:
-                    bookkeeper.append(possible_config)
+                    orientation = base_orientations[index]
+                    pre_key = f"""{orientation.shapecode["rotation"]}{"T" if orientation.shapecode["flipped"] else "F"}"""
+                    for ns_square in orientation.squares:
+                        coord = (outs_square.origin[0]- ns_square.origin[0], outs_square.origin[1]- ns_square.origin[1])
+                        if not coord in self.collisions()[key_dict[pre_key]]:
+                            possible_config.append([orientation.translate(*coord)])
                 if printing:
                     print(len(possible_config))
 
@@ -176,12 +338,16 @@ class Polyomino:
                 for config in possible_config:
                     if not_occupied_in(outs_square, config):
                         for index in range(len(base_orientations)):
-                            for ns_square in base_orientations[index].squares:
-                                new_shape = base_orientations[index].translate_rel(outs_square, ns_square)
-                                if all(not_occupied_in(square, config, extra=True) for square in new_shape.squares):
-                                    new_config = config.copy()
-                                    new_config.append(new_shape)
-                                    new_possible_config.append(new_config)
+                            orientation = base_orientations[index]
+                            pre_key = f"""{orientation.shapecode["rotation"]}{"T" if orientation.shapecode["flipped"] else "F"}"""
+                            for ns_square in orientation.squares:
+                                coord = (outs_square.origin[0]- ns_square.origin[0], outs_square.origin[1]- ns_square.origin[1])
+                                if not coord in self.collisions()[key_dict[pre_key]]:
+                                    # if not coord in config[0].collisions()[key_dict[pre_key]]:
+                                    if all(square not in shape.squares for shape in config for square in orientation.translate(*coord).squares):
+                                        new_config = config.copy()
+                                        new_config.append(orientation.translate(*coord))
+                                        new_possible_config.append(new_config)
                                 else:
                                     continue
                     else:
@@ -190,63 +356,9 @@ class Polyomino:
                 if new_possible_config == []:
                     return []
                 possible_config = new_possible_config.copy()
-                if bookkeeping:
-                    bookkeeper.append(possible_config)
                 if printing:
                     print(len(possible_config))
         return [[config] for config in possible_config] if heesch else possible_config
-
-
-    def heesch_corona(self, coronalist):
-        next_corona_list = []
-        for i in range(len(coronalist)):
-            corona_length = len(coronalist)
-            message = f" \r we are now at {int((i)/corona_length*100)}% "
-            print(message, end="")
-            corona_config = coronalist[i]
-            ns_squares = self.squares.copy()
-            for corona in corona_config:
-                for shape in corona:
-                    ns_squares.extend(shape.squares)
-            new_shape = Polyomino(ns_squares)
-            new_corona = new_shape.corona_maker(self.orientations(), printing = False)
-
-            for elem in new_corona:
-                new_corona_config = corona_config.copy()
-                new_corona_config.append(elem)
-                next_corona_list.append(new_corona_config)
-        return next_corona_list
-
-    def heesch_computer(self):
-        message = f"""
---------------------------------------
-We are now computing the 1st corona
---------------------------------------
-"""
-        print(message)
-
-        coronalist = self.corona_maker(self.orientations(), heesch=True, printing = False)
-        if coronalist == []:
-            print("")
-            print("The heesch number is 0")
-            return []
-        else:
-            i = 0
-            while True:
-                message = f"""
---------------------------------------
-We are now computing the {i+2}nd corona
---------------------------------------
-"""
-                print(message)
-                new_corona_list = self.heesch_corona(coronalist)
-                if new_corona_list == []:
-                    print("")
-                    print(f" The heesch number is {i+1}")
-                    return coronalist
-                else:
-                    coronalist = new_corona_list.copy()
-                    i += 1
 
     def outside(self):
         def rawsquarees(squarelist):
@@ -262,22 +374,61 @@ We are now computing the {i+2}nd corona
         res = [square for square in res if square not in self.squares]
         return res
 
-    def orientations(self):
-        orientation_list =[
-        self,
-        self.rot_90(),
-        self.rot_90().rot_90(),
-        self.rot_90().rot_90().rot_90(),
-        self.flip(),
-        self.flip().rot_90(),
-        self.flip().rot_90().rot_90(),
-        self.flip().rot_90().rot_90().rot_90(),
-        ]
-        new_orientations_list = []
-        for orientation in orientation_list:
-            if orientation not in new_orientations_list:
-                new_orientations_list.append(orientation)
-        return new_orientations_list
+
+
+
+#     def heesch_corona(self, coronalist):
+#         next_corona_list = []
+#         for i in range(len(coronalist)):
+#             corona_length = len(coronalist)
+#             message = f" \r we are now at {int((i)/corona_length*100)}% "
+#             print(message, end="")
+#             corona_config = coronalist[i]
+#             ns_squares = self.squares.copy()
+#             for corona in corona_config:
+#                 for shape in corona:
+#                     ns_squares.extend(shape.squares)
+#             new_shape = Polyomino(ns_squares)
+#             new_corona = new_shape.corona_maker(self.orientations(), printing = False)
+#
+#             for elem in new_corona:
+#                 new_corona_config = corona_config.copy()
+#                 new_corona_config.append(elem)
+#                 next_corona_list.append(new_corona_config)
+#         return next_corona_list
+#
+#     def heesch_computer(self):
+#         message = f"""
+# --------------------------------------
+# We are now computing the 1st corona
+# --------------------------------------
+# """
+#         print(message)
+#
+#         coronalist = self.corona_maker(self.orientations(), heesch=True, printing = False)
+#         if coronalist == []:
+#             print("")
+#             print("The heesch number is 0")
+#             return []
+#         else:
+#             i = 0
+#             while True:
+#                 message = f"""
+# --------------------------------------
+# We are now computing the {i+2}nd corona
+# --------------------------------------
+# """
+#                 print(message)
+#                 new_corona_list = self.heesch_corona(coronalist)
+#                 if new_corona_list == []:
+#                     print("")
+#                     print(f" The heesch number is {i+1}")
+#                     return coronalist
+#                 else:
+#                     coronalist = new_corona_list.copy()
+#                     i += 1
+
+
 
     def plot_data(self):
         plottinglist = []
