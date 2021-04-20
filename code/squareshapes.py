@@ -25,6 +25,13 @@ class Square:
     def __eq__(self, other):
         return np.array_equal(self.origin, other.origin)
 
+    def to_data(self):
+        data = {
+        "x": self.origin[0],
+        "y": self.origin[1],
+        }
+        return data
+
     def plot_data(self):
         plottinglist = []
         for elem in self.edges:
@@ -137,6 +144,15 @@ class Polyomino:
         # rotation_equal = self.shapecode["rotation"] == other.shapecode["rotation"]
         # shape_equal = translation_equal and flipped_equal and rotation_equal
         return self.shapecode == other.shapecode
+
+    def to_data(self):
+        data = {
+        "squares": [square.to_data() for square in self.squares],
+        "shapecode":self.shapecode,
+        "priority": [square.to_data() for square in self.priority],
+        "collision_data": self.collision_data
+        }
+        return data
 
     def orientations(self, fake = False):
         orientation_list =[
@@ -373,8 +389,6 @@ class Polyomino:
         return [[config] for config in possible_config] if heesch else possible_config
 
     def outside(self):
-        def rawsquarees(squarelist):
-            return [square(square.origin[0], square.origin[1]) for square in squarelist]
 
         bigsquarelist = []
         for vert in self.vertmaker():

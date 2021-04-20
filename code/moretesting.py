@@ -2,6 +2,7 @@ from squareshapes import Square, Polyomino, bigsquare_maker
 import matplotlib.pyplot as plt
 from matplotlib.patches import RegularPolygon
 import numpy as np
+import ast
 import time
 
 def plotter(plottinglist, patches):
@@ -13,59 +14,6 @@ def plotter(plottinglist, patches):
     axs.set_aspect("equal")
     plt.axis('off')
     plt.show()
-
-start_time = time.time()
-
-plottinglist = []
-patches = []
-
-# """ Good testing H1 tile """
-# tile1 = Polyomino(
-# [
-# Square(0,0),
-# Square(2,0),
-# Square(4,0),
-# Square(6,0),
-# Square(4,2),
-# Square(4,4),
-# Square(4,-2),
-# ]
-# )
-
-""" Tile 2 with H2"""
-priority = [
-Square(2,0),
-Square(4,6),
-]
-
-tile1 = Polyomino(
-[
-Square(0,0),
-Square(0,2),
-Square(0,4),
-Square(0,6),
-Square(-2,4),
-Square(2,2),
-Square(2,4),
-Square(2,6),
-Square(4,0),
-Square(4,2),
-Square(4,6),
-],
-priority = priority
-)
-
-# coronalist = tile1.heesch_computer()[0]
-# for index in range(len(coronalist)):
-#     corona_config = coronalist[index]
-#     for shape in corona_config:
-#         plottinglist.extend(shape.plot_data())
-#         for square in shape.squares:
-#             color = "turquoise" if index % 2 == 0 else "lightseagreen"
-#             plot_square = RegularPolygon(square.origin, numVertices=4 ,orientation = 1/4 *np.pi, radius= np.sqrt(2), alpha=1, color= color)
-#             patches.append(plot_square)
-
-# remove those with holes
 
 def has_holes(config, output = False ):
     total_squares = set()
@@ -109,9 +57,59 @@ def has_holes(config, output = False ):
 
     return without_inside if output else (without_inside != set())
 
+start_time = time.time()
+
+plottinglist = []
+patches = []
+
+
+
+""" Tile 2 with H2"""
+priority = [
+Square(2,0),
+Square(4,6),
+]
+
+tile1 = Polyomino(
+[
+Square(0,0),
+Square(0,2),
+Square(0,4),
+Square(0,6),
+Square(-2,4),
+Square(2,2),
+Square(2,4),
+Square(2,6),
+Square(4,0),
+Square(4,2),
+Square(4,6),
+],
+priority = priority
+)
+
 possible_config = tile1.corona_maker(tile1.orientations(), printing= True)
+print("now removing holes")
 nh_possible_config = [config for config in possible_config if not has_holes(config)]
-config = nh_possible_config[0]
+print(len(nh_possible_config))
+config = nh_possible_config[10]
+config_data = []
+for shape in config:
+    config_data.append(shape.to_data())
+with open('./code/test_data.txt', 'w') as file:
+    file.write(str(config_data))
+
+# with open('./code/test_data.txt', 'r') as text:
+#     data = ast.literal_eval(text.readline())
+# config = []
+# for shape in data:
+#     config.append(Polyomino(
+#     [Square(square["x"], square["y"]) for square in shape["squares"]],
+#     shapecode = shape["shapecode"],
+#     priority = shape["priority"],
+#     collision_data = shape["collision_data"]
+#     ))
+
+
 
 for tile in config:
     plottinglist.extend(tile.plot_data())
