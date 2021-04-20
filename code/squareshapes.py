@@ -126,6 +126,8 @@ class Polyomino:
         self.edges = edgemaker()
         self.priority = priority
         self.shapecode = shapecode
+        if collision_data == []:
+            print("no collision data")
         self.collision_data = self.collisions() if collision_data == [] else collision_data
 
     def __eq__(self, other):
@@ -210,8 +212,11 @@ class Polyomino:
         }
 
         new_collision_data = {}
-        for index in range(8):
-            new_collision_data[index] = {(coord[0]+xval, coord[1]+yval) for coord in self.collision_data[index]}
+        for bob in range(8):
+            new_collision_data[bob] = {(coord[0] + xval, coord[1] + yval) for coord in self.collision_data[bob]}
+        for elem in self.collision_data[1]:
+            if (elem[0]+xval,elem[1]+yval) not in new_collision_data[1]:
+                print(f"seomthing is fucked here")
 
         return Polyomino(new_squares, shapecode = new_shapecode, collision_data = new_collision_data)
 
@@ -268,12 +273,17 @@ class Polyomino:
         if fake:
             return FakePolyomino(new_squares, shapecode = new_shapecode)
         else:
-            new_collision_data = {}
-            for i in range(8):
-                if i < 4:
-                    new_collision_data[i] = {(-coord[0], coord[1]) for coord in self.collision_data[ 7 - ((i+3) % 4)]}
-                elif i < 8:
-                    new_collision_data[i] = {(-coord[0], coord[1]) for coord in self.collision_data[ (8 - i) % 4]}
+            new_collision_data = {
+            0: {(-coord[0], coord[1]) for coord in self.collision_data[ 4 ] },
+            1: {(-coord[0], coord[1]) for coord in self.collision_data[ 7 ] },
+            2: {(-coord[0], coord[1]) for coord in self.collision_data[ 6 ] },
+            3: {(-coord[0], coord[1]) for coord in self.collision_data[ 5 ] },
+            4: {(-coord[0], coord[1]) for coord in self.collision_data[ 0 ] },
+            5: {(-coord[0], coord[1]) for coord in self.collision_data[ 3 ] },
+            6: {(-coord[0], coord[1]) for coord in self.collision_data[ 2 ] },
+            7: {(-coord[0], coord[1]) for coord in self.collision_data[ 1 ] },
+            }
+
 
             return Polyomino(new_squares, shapecode = new_shapecode, collision_data = new_collision_data)
 
@@ -283,12 +293,18 @@ class Polyomino:
 
 
     def corona_maker(self, base_orientations, heesch=False, printing=True):
-        def config_collision(config):
-            collision_dict = self.collision_data
+        def config_collision(coord, config, key):
+            if coord in self.collision_data[key]:
+                return False
             for shape in config:
-                for or_index in range(8):
-                    collision_dict[or_index].union(shape.collision_data[or_index])
-            return collision_dict
+                if coord in shape.collision_data[key]:
+                    return False
+            return True
+            # collision_dict = self.collision_data
+            # for shape in config:
+            #     for or_index in range(8):
+            #         collision_dict[or_index].union(shape.collision_data[or_index])
+            # return collision_dict
 
         def not_occupied_in(elem, config, extra = False):
             config_squares = self.squares.copy() if extra else []
@@ -297,7 +313,6 @@ class Polyomino:
                 config_squares.extend(shape.squares)
             for square in config_squares:
                 if np.array_equal(elem.origin, square.origin):
-                    print("occupied")
                     return False
 
             return True
@@ -316,11 +331,10 @@ class Polyomino:
 
         possible_config = []
         outside_list = self.outside()
-        # for i in range(len(outside_list)):
-        for i in range(2):
-            # if printing:
-            #     message = f" \r we are now at {int((i+1)/len(outside_list)*100)}% "
-            #     print(message, end="")
+        for i in range(len(outside_list)):
+            if heesch:
+                message = f" \r we are now at {int((i+1)/len(outside_list)*100)}% "
+                print(message, end="")
             outs_square = outside_list[i]
             if len(possible_config) == 0:
                 for index in range(len(base_orientations)):
@@ -340,18 +354,16 @@ class Polyomino:
                         for index in range(len(base_orientations)):
                             orientation = base_orientations[index]
                             pre_key = f"""{orientation.shapecode["rotation"]}{"T" if orientation.shapecode["flipped"] else "F"}"""
+                            key = key_dict[pre_key]
                             for ns_square in orientation.squares:
                                 coord = (outs_square.origin[0]- ns_square.origin[0], outs_square.origin[1]- ns_square.origin[1])
-                                if not coord in self.collisions()[key_dict[pre_key]]:
-                                    # if not coord in config[0].collisions()[key_dict[pre_key]]:
-                                    if all(square not in shape.squares for shape in config for square in orientation.translate(*coord).squares):
-                                        new_config = config.copy()
-                                        new_config.append(orientation.translate(*coord))
-                                        new_possible_config.append(new_config)
+                                if config_collision(coord, config, key):
+                                    new_config = config.copy()
+                                    new_config.append(orientation.translate(*coord))
+                                    new_possible_config.append(new_config)
                                 else:
                                     continue
                     else:
-                        #print(f" its occupied in the config? ")
                         new_possible_config.append(config)
                 if new_possible_config == []:
                     return []
@@ -388,7 +400,7 @@ class Polyomino:
 #             for corona in corona_config:
 #                 for shape in corona:
 #                     ns_squares.extend(shape.squares)
-#             new_shape = Polyomino(ns_squares)
+#             new_shape = FakePolyomino(ns_squares)
 #             new_corona = new_shape.corona_maker(self.orientations(), printing = False)
 #
 #             for elem in new_corona:
