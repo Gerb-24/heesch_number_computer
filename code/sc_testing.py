@@ -1,5 +1,6 @@
 from squareshapes import Square, Polyomino, bigsquare_maker
 import matplotlib.pyplot as plt
+from tiles import my_own_tile as tile1
 from matplotlib.patches import RegularPolygon
 import numpy as np
 import time
@@ -31,29 +32,6 @@ patches = []
 # Square(4,-2),
 # ]
 # )
-
-""" Tile 2 with H2"""
-priority = [
-Square(2,0),
-Square(4,6),
-]
-
-tile1 = Polyomino(
-[
-Square(0,0),
-Square(0,2),
-Square(0,4),
-Square(0,6),
-Square(-2,4),
-Square(2,2),
-Square(2,4),
-Square(2,6),
-Square(4,0),
-Square(4,2),
-Square(4,6),
-],
-priority = priority
-)
 
 # coronalist = tile1.heesch_computer()[0]
 # for index in range(len(coronalist)):
@@ -111,7 +89,9 @@ def has_holes(config, output = False ):
 
 possible_config = tile1.corona_maker(tile1.orientations(), printing= True)
 nh_possible_config = [config for config in possible_config if not has_holes(config)]
+print(len(nh_possible_config))
 config = nh_possible_config[0]
+# config = possible_config[0]
 
 for tile in config:
     plottinglist.extend(tile.plot_data())
