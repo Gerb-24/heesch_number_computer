@@ -52,49 +52,6 @@ class Square:
     def flip(self):
         return Square(-self.origin[0], self.origin[1])
 
-    # def to_data(self):
-    #     return [self.origin[0], self.origin[1], self.edgedata]
-    #
-    # def __eq__(self, other):
-    #     return (self.origin == other.origin and self.edgedata == other.edgedata)
-    #
-    # def flip(self):
-    #
-    #     def edgedata_flip(edgedata):
-    #         new_edgedata = [
-    #         edgedata[0],
-    #         edgedata[5],
-    #         edgedata[4],
-    #         edgedata[3],
-    #         edgedata[2],
-    #         edgedata[1],
-    #         ]
-    #
-    #         return new_edgedata
-    #
-    #     return squareagon(-self.origin[0] + self.origin[1], self.origin[1], edgedata_flip(self.edgedata))
-    #
-    # def turn60(self):
-    #
-    #     def edgedata_turn60(edgedata):
-    #         new_edgedata = [
-    #         edgedata[5],
-    #         edgedata[0],
-    #         edgedata[1],
-    #         edgedata[2],
-    #         edgedata[3],
-    #         edgedata[4],
-    #         ]
-    #         return new_edgedata
-    #
-    #     new_origin = (-self.origin[1]+self.origin[0], self.origin[0])
-    #     return squareagon(new_origin[0], new_origin[1], edgedata_turn60(self.edgedata))
-    #
-    # def translate(self, xval, yval):
-    #     newx = self.origin[0] + xval
-    #     newy = self.origin[1] + yval
-    #     return squareagon(newx, newy, edgedata = self.edgedata)
-
 class FakePolyomino:
     def __init__(self, squares, shapecode = {"translation": (0, 0),"flipped": False,  "rotation": 0}):
         self.squares = squares
@@ -278,7 +235,7 @@ class Polyomino:
         self.shapecode["translation"][1])
 
         new_flipped = not self.shapecode["flipped"]
-        new_rotation = self.shapecode["rotation"]
+        new_rotation = (360 - self.shapecode["rotation"]) % 360
 
         new_shapecode = {
         "translation": new_translation,
@@ -334,16 +291,34 @@ class Polyomino:
             return True
 
 
-        key_dict = {
-        "0F": 0,
-        "90F": 1,
-        "180F": 2,
-        "270F": 3,
-        "0T": 4,
-        "90T": 5,
-        "180T": 6,
-        "270T": 7,
-        }
+        def check_combinations(base_orientations, config):
+            new_possible_config = []
+
+            key_dict = {
+            "0F": 0,
+            "90F": 1,
+            "180F": 2,
+            "270F": 3,
+            "0T": 4,
+            "90T": 5,
+            "180T": 6,
+            "270T": 7,
+            }
+
+            for index in range(len(base_orientations)):
+                orientation = base_orientations[index]
+                pre_key = f"""{orientation.shapecode["rotation"]}{"T" if orientation.shapecode["flipped"] else "F"}"""
+                key = key_dict[pre_key]
+                for ns_square in orientation.squares:
+                    coord = (outs_square.origin[0]- ns_square.origin[0], outs_square.origin[1]- ns_square.origin[1])
+                    if config_collision(coord, config, key):
+                        new_config = config.copy()
+                        new_config.append(orientation.translate(*coord))
+                        new_possible_config.append(new_config)
+                    else:
+                        continue
+            return new_possible_config
+
 
         possible_config = []
         outside_list = self.outside()
@@ -353,13 +328,14 @@ class Polyomino:
                 print(message, end="")
             outs_square = outside_list[i]
             if len(possible_config) == 0:
-                for index in range(len(base_orientations)):
-                    orientation = base_orientations[index]
-                    pre_key = f"""{orientation.shapecode["rotation"]}{"T" if orientation.shapecode["flipped"] else "F"}"""
-                    for ns_square in orientation.squares:
-                        coord = (outs_square.origin[0]- ns_square.origin[0], outs_square.origin[1]- ns_square.origin[1])
-                        if not coord in self.collisions()[key_dict[pre_key]]:
-                            possible_config.append([orientation.translate(*coord)])
+                possible_config.extend(check_combinations(base_orientations, []))
+                # for index in range(len(base_orientations)):
+                #     orientation = base_orientations[index]
+                #     pre_key = f"""{orientation.shapecode["rotation"]}{"T" if orientation.shapecode["flipped"] else "F"}"""
+                #     for ns_square in orientation.squares:
+                #         coord = (outs_square.origin[0]- ns_square.origin[0], outs_square.origin[1]- ns_square.origin[1])
+                #         if not coord in self.collisions()[key_dict[pre_key]]:
+                #             possible_config.append([orientation.translate(*coord)])
                 if printing:
                     print(len(possible_config))
 
@@ -367,18 +343,19 @@ class Polyomino:
                 new_possible_config = []
                 for config in possible_config:
                     if not_occupied_in(outs_square, config):
-                        for index in range(len(base_orientations)):
-                            orientation = base_orientations[index]
-                            pre_key = f"""{orientation.shapecode["rotation"]}{"T" if orientation.shapecode["flipped"] else "F"}"""
-                            key = key_dict[pre_key]
-                            for ns_square in orientation.squares:
-                                coord = (outs_square.origin[0]- ns_square.origin[0], outs_square.origin[1]- ns_square.origin[1])
-                                if config_collision(coord, config, key):
-                                    new_config = config.copy()
-                                    new_config.append(orientation.translate(*coord))
-                                    new_possible_config.append(new_config)
-                                else:
-                                    continue
+                        new_possible_config.extend(check_combinations(base_orientations, config))
+                        # for index in range(len(base_orientations)):
+                        #     orientation = base_orientations[index]
+                        #     pre_key = f"""{orientation.shapecode["rotation"]}{"T" if orientation.shapecode["flipped"] else "F"}"""
+                        #     key = key_dict[pre_key]
+                        #     for ns_square in orientation.squares:
+                        #         coord = (outs_square.origin[0]- ns_square.origin[0], outs_square.origin[1]- ns_square.origin[1])
+                        #         if config_collision(coord, config, key):
+                        #             new_config = config.copy()
+                        #             new_config.append(orientation.translate(*coord))
+                        #             new_possible_config.append(new_config)
+                        #         else:
+                        #             continue
                     else:
                         new_possible_config.append(config)
                 if new_possible_config == []:
