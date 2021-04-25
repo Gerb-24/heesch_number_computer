@@ -329,13 +329,6 @@ class Polyomino:
             outs_square = outside_list[i]
             if len(possible_config) == 0:
                 possible_config.extend(check_combinations(base_orientations, []))
-                # for index in range(len(base_orientations)):
-                #     orientation = base_orientations[index]
-                #     pre_key = f"""{orientation.shapecode["rotation"]}{"T" if orientation.shapecode["flipped"] else "F"}"""
-                #     for ns_square in orientation.squares:
-                #         coord = (outs_square.origin[0]- ns_square.origin[0], outs_square.origin[1]- ns_square.origin[1])
-                #         if not coord in self.collisions()[key_dict[pre_key]]:
-                #             possible_config.append([orientation.translate(*coord)])
                 if printing:
                     print(len(possible_config))
 
@@ -344,18 +337,6 @@ class Polyomino:
                 for config in possible_config:
                     if not_occupied_in(outs_square, config):
                         new_possible_config.extend(check_combinations(base_orientations, config))
-                        # for index in range(len(base_orientations)):
-                        #     orientation = base_orientations[index]
-                        #     pre_key = f"""{orientation.shapecode["rotation"]}{"T" if orientation.shapecode["flipped"] else "F"}"""
-                        #     key = key_dict[pre_key]
-                        #     for ns_square in orientation.squares:
-                        #         coord = (outs_square.origin[0]- ns_square.origin[0], outs_square.origin[1]- ns_square.origin[1])
-                        #         if config_collision(coord, config, key):
-                        #             new_config = config.copy()
-                        #             new_config.append(orientation.translate(*coord))
-                        #             new_possible_config.append(new_config)
-                        #         else:
-                        #             continue
                     else:
                         new_possible_config.append(config)
                 if new_possible_config == []:
@@ -377,60 +358,273 @@ class Polyomino:
         res = [square for square in res if square not in self.squares]
         return res
 
+    def heesch_corona(self, possible_configs, coronalist, c_index):
+        def sec_corona_maker(conf_corona_config):
+
+            """
+            We now translate, rotate and flip the whole config so that the start_tile
+            is the same as the base tile.
+            """
+
+            def transform(st_tile, configuration):
+
+                def flip(flipped, tile):
+
+                    """ A function that flips a tile if flipping is true,
+                    otherwise it just returns the tile """
+
+                    if flipped:
+                        return tile.flip()
+                    else:
+                        return tile
+
+                def rotate(rotation, tile):
+
+                    """ A function that can rotate a tile
+                    by 90 degrees multiple times"""
+
+                    if rotation == 0:
+                        return tile
+                    else:
+                        return rotate(rotation - 90, tile.rot_90())
+
+                def translate(translation, tile):
+
+                    """ A function that translates a tile
+                    just to keep things more organised """
+
+                    return tile.translate(*translation)
+
+                sc = st_tile.shapecode
+                translation = ( -sc["translation"][0], -sc["translation"][1])
+                flipped = sc["flipped"]
+                rotation = 360 - sc["rotation"]
+
+                transformed_config = [flip(flipped, rotate(rotation, translate(translation, tile))) for tile in configuration]
+
+                return transformed_config
+
+            """
+            Now we take a for loop over all the coronas in possible_configs
+            When this corona fits we append it to the list of the new possible configurations
+            A corona fits if all of the tiles that do collide with fixed configuration
+            are actually part of that configuration.
+            """
+
+            def collides_with(tile, configuration):
+
+                """ In here we check if a tile collides with one of the tiles in a configuration """
+
+                key_dict = {
+                "0F": 0,
+                "90F": 1,
+                "180F": 2,
+                "270F": 3,
+                "0T": 4,
+                "90T": 5,
+                "180T": 6,
+                "270T": 7,
+                }
+
+                coord = tile.shapecode["translation"]
+                pre_key = f"""{tile.shapecode["rotation"]}{"T" if tile.shapecode["flipped"] else "F"}"""
+                key = key_dict[pre_key]
+
+                for conf_tile in configuration:
+                    if coord in conf_tile.collision_data[key]:
+                        return True
+                return False
+
+            def retransform(st_tile, corona):
+
+                def flip(flipped, tile):
+
+                    """ A function that flips a tile if flipping is true,
+                    otherwise it just returns the tile """
+
+                    if flipped:
+                        return tile.flip()
+                    else:
+                        return tile
+
+                def rotate(rotation, tile):
+
+                    """ A function that can rotate a tile
+                    by 90 degrees multiple times"""
+
+                    if rotation == 0:
+                        return tile
+                    else:
+                        return rotate(rotation - 90, tile.rot_90())
+
+                def translate(translation, tile):
+
+                    """ A function that translates a tile
+                    just to keep things more organised """
+
+                    return tile.translate(*translation)
+
+                sc = st_tile.shapecode
+                translation = sc["translation"]
+                flipped = sc["flipped"]
+                rotation = sc["rotation"]
+
+                retransformed_corona = [translate(translation, rotate(rotation, flip(flipped, tile))) for tile in corona]
+
+                return retransformed_corona
+
+            """
+            new_c_configs now contains the all the possible coronas
+            around the start_tile that fit with the fixed configuration.
+            """
+
+            """
+            In the same way as we did with the corona_maker function
+            we now want to combine these with the old config to get a list of possible_c_configs
+            for every tile in the corona of the config we will now change
+            the possible_c_configs to be all of the currently possible_c_configs
+            """
+
+            # config = [self] + conf_corona
+            conf_corona = conf_corona_config[c_index]
+            pre_possible_c_configs = conf_corona_config.copy()
+            pre_possible_c_configs.append([])
+            possible_c_configs = [ pre_possible_c_configs ]
+
+            """
+            So here we loop over the tiles in the corona of the config
+            where we start at tile 1, since we already have done tile 0
+            """
+            #print(f"the length of conf_corona: {len(conf_corona)}")
+            for start_num in range(len(conf_corona)):
+                print(f" we our now at tile {start_num+1} out of {len(conf_corona)}")
+                start_tile = conf_corona[start_num]
+
+                """ We now go in a loop over all the c_configs in possible_c_configs """
+                new_possible_c_configs = []
+                for c_config in possible_c_configs:
+                    """
+                    Since we now want to work with c_config with corona structure
+                    we need to define something new that we want to translate
+                    which we call the absolute c config
+                    """
+                    # print(c_config[1])
+                    abs_c_config = [self]
+                    for abs_index in range(c_index+1):
+                        abs_c_config.extend(c_config[abs_index])
+                    transformed_abs_c_config = transform(start_tile, abs_c_config)
+
+                    """
+                    For this recentered absoltue c_config we will append all of the
+                    retransformed corona that fit with the transformed c_config
+                    """
+
+                    new_c_configs = []
+                    for corona in coronalist:
+                        if all(c_tile in transformed_abs_c_config for c_tile in corona if collides_with(c_tile, transformed_abs_c_config)):
+                            retransformed_corona = [ tile for tile in retransform( start_tile, corona ) if tile not in abs_c_config ]
+                            # new_c_configs.append( c_config + retransformed_corona )
+                            """
+                            We first copy the current c_config in corona structure
+                            and add the new retransformed_corona to it
+                            then we append this to new_c_configs, this then contains all the new_possible_c_configs at the end
+                            """
+                            c_config_with_added_corona = c_config.copy()
+                            c_config_with_added_corona[c_index+1] = c_config_with_added_corona[c_index+1] + retransformed_corona
+                            new_c_configs.append( c_config_with_added_corona )
+
+                    new_possible_c_configs.extend( new_c_configs )
+
+                """
+                If we no corona fits anymore for every possible c_config,
+                then the original config is dead
+                """
+
+                if new_possible_c_configs == []:
+                    possible_c_configs = []
+                    break
+
+                possible_c_configs = new_possible_c_configs.copy()
+
+            return possible_c_configs
+
+        second_configs = []
+        for conf_corona_index in range(len(possible_configs)):
+            print( f" We are at corona {conf_corona_index} out of {len(possible_configs)}  " )
+            """
+            the conf_corona is the last corona in the possible_config,
+            """
+            conf_corona_config = possible_configs[conf_corona_index]
 
 
+            second_configs.extend(sec_corona_maker(conf_corona_config))
+        print(f"in total there are {len(second_configs)} working configurations")
 
-#     def heesch_corona(self, coronalist):
-#         next_corona_list = []
-#         for i in range(len(coronalist)):
-#             corona_length = len(coronalist)
-#             message = f" \r we are now at {int((i)/corona_length*100)}% "
-#             print(message, end="")
-#             corona_config = coronalist[i]
-#             ns_squares = self.squares.copy()
-#             for corona in corona_config:
-#                 for shape in corona:
-#                     ns_squares.extend(shape.squares)
-#             new_shape = FakePolyomino(ns_squares)
-#             new_corona = new_shape.corona_maker(self.orientations(), printing = False)
-#
-#             for elem in new_corona:
-#                 new_corona_config = corona_config.copy()
-#                 new_corona_config.append(elem)
-#                 next_corona_list.append(new_corona_config)
-#         return next_corona_list
-#
-#     def heesch_computer(self):
-#         message = f"""
-# --------------------------------------
-# We are now computing the 1st corona
-# --------------------------------------
-# """
-#         print(message)
-#
-#         coronalist = self.corona_maker(self.orientations(), heesch=True, printing = False)
-#         if coronalist == []:
-#             print("")
-#             print("The heesch number is 0")
-#             return []
-#         else:
-#             i = 0
-#             while True:
-#                 message = f"""
-# --------------------------------------
-# We are now computing the {i+2}nd corona
-# --------------------------------------
-# """
-#                 print(message)
-#                 new_corona_list = self.heesch_corona(coronalist)
-#                 if new_corona_list == []:
-#                     print("")
-#                     print(f" The heesch number is {i+1}")
-#                     return coronalist
-#                 else:
-#                     coronalist = new_corona_list.copy()
-#                     i += 1
+        return second_configs
 
+    def heesch_computer(self):
+        def has_holes(config, output = False ):
+            total_squares = set()
+            for shape in config+[tile1]:
+                total_squares = total_squares.union({(square.origin[0],square.origin[1]) for square in shape.squares})
+            extended_squares = set()
+            for square in total_squares:
+                extended_squares = extended_squares.union({
+                square,
+                (square[0], square[1]-2),
+                (square[0]+2, square[1]-2),
+                (square[0]+2, square[1]),
+                (square[0]+2, square[1]+2),
+                (square[0], square[1]+2),
+                (square[0]-2, square[1]+2),
+                (square[0]-2, square[1]),
+                (square[0]-2, square[1]-2),
+                })
+            without_inside = extended_squares.difference(total_squares)
+
+            # getting a starting position
+            xmin = min({coord[0] for coord in without_inside})
+            ymin = min({coord[1] for coord in without_inside if coord[0] == xmin})
+            mincoord = (xmin, ymin)
+
+            # computing the connected component and removing them
+            coords = { mincoord }
+            while coords != set():
+                without_inside = without_inside.difference(coords)
+                new_coords = set()
+                for coord in coords:
+                    nextcoords = {
+                    (coord[0], coord[1]-2),
+                    (coord[0]+2, coord[1]),
+                    (coord[0], coord[1]+2),
+                    (coord[0]-2, coord[1]),
+                    }
+                    nextcoords = {n_coord for n_coord in nextcoords if n_coord in without_inside}
+                    new_coords = new_coords.union(nextcoords)
+                coords = new_coords
+
+            return without_inside if output else (without_inside != set())
+
+        coronalist = self.corona_maker(self.orientations(), heesch=True)
+
+        if coronalist == []:
+            return []
+        else:
+            i = 0
+            while True:
+                message = f"""
+                --------------------------------------
+                We are now computing the {i+2}nd corona
+                --------------------------------------
+                """
+                print(message)
+                new_corona_list = self.heesch_corona(coronalist, i)
+                if new_corona_list == []:
+                    print(f" The heesch number is {i+1}")
+                    return coronalist
+                else:
+                    coronalist = new_corona_list.copy()
+                    i += 1
 
 
     def plot_data(self):
