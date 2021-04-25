@@ -497,7 +497,7 @@ class Polyomino:
             """
             #print(f"the length of conf_corona: {len(conf_corona)}")
             for start_num in range(len(conf_corona)):
-                print(f" we our now at tile {start_num+1} out of {len(conf_corona)}")
+                #print(f" we our now at tile {start_num+1} out of {len(conf_corona)}")
                 start_tile = conf_corona[start_num]
 
                 """ We now go in a loop over all the c_configs in possible_c_configs """
@@ -508,9 +508,10 @@ class Polyomino:
                     we need to define something new that we want to translate
                     which we call the absolute c config
                     """
-                    # print(c_config[1])
+                    #print(c_config[1])
+                    # abs_c_config = [self]+c_config[0]+c_config[1]
                     abs_c_config = [self]
-                    for abs_index in range(c_index+1):
+                    for abs_index in range(c_index+2):
                         abs_c_config.extend(c_config[abs_index])
                     transformed_abs_c_config = transform(start_tile, abs_c_config)
 
@@ -550,7 +551,8 @@ class Polyomino:
 
         second_configs = []
         for conf_corona_index in range(len(possible_configs)):
-            print( f" We are at corona {conf_corona_index} out of {len(possible_configs)}  " )
+            message = f" We are at corona {conf_corona_index} out of {len(possible_configs)}  \r"
+            print( message, end="" )
             """
             the conf_corona is the last corona in the possible_config,
             """
@@ -565,7 +567,7 @@ class Polyomino:
     def heesch_computer(self):
         def has_holes(config, output = False ):
             total_squares = set()
-            for shape in config+[tile1]:
+            for shape in config+[self]:
                 total_squares = total_squares.union({(square.origin[0],square.origin[1]) for square in shape.squares})
             extended_squares = set()
             for square in total_squares:
@@ -605,11 +607,14 @@ class Polyomino:
 
             return without_inside if output else (without_inside != set())
 
-        coronalist = self.corona_maker(self.orientations(), heesch=True)
+        coronalist = self.corona_maker(self.orientations())
+
 
         if coronalist == []:
             return []
         else:
+            no_hole_coronalist = [corona for corona in coronalist if not has_holes(corona)]
+            possible_configs = [ [corona] for corona in no_hole_coronalist]
             i = 0
             while True:
                 message = f"""
@@ -618,12 +623,12 @@ class Polyomino:
                 --------------------------------------
                 """
                 print(message)
-                new_corona_list = self.heesch_corona(coronalist, i)
-                if new_corona_list == []:
+                new_possible_configs = self.heesch_corona(possible_configs, no_hole_coronalist, i)
+                if new_possible_configs == []:
                     print(f" The heesch number is {i+1}")
-                    return coronalist
+                    return possible_configs
                 else:
-                    coronalist = new_corona_list.copy()
+                    possible_configs = new_possible_configs.copy()
                     i += 1
 
 

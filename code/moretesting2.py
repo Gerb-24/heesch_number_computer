@@ -1,6 +1,7 @@
 from squareshapes import Square, Polyomino, bigsquare_maker
 import matplotlib.pyplot as plt
 from matplotlib.patches import RegularPolygon
+from tiles import T2H2
 import numpy as np
 import ast
 import time
@@ -72,29 +73,7 @@ patches = []
 
 
 
-""" H3 tile """
-
-tile1 = Polyomino(
-[
-Square( -2, 0),
-Square( -2, 2),
-Square( 0, 0),
-Square( 0, 2),
-Square( 0, 4),
-Square( 2, 0),
-Square( 2, 4),
-Square( 2, 8),
-Square( 4, 4),
-Square( 4, 6),
-Square( 4, 8),
-Square( 6, 0),
-Square( 6, 2),
-Square( 6, 4),
-Square( 8, 4),
-
-],
-priority = []
-)
+tile1 = T2H2
 
 """
 With this commented part we can write all the first corona data to a file
@@ -111,7 +90,7 @@ so that we do not have to recalculate all the data for the first coronas.
 #     for shape in config:
 #         config_data.append(shape.to_data())
 #     possible_configs_data.append(config_data)
-# with open('./code/test_data.txt', 'w') as file:
+# with open('./code/T2H2_first_corona_data.txt', 'w') as file:
 #     file.write(str(possible_configs_data))
 #
 # print("data is written in")
@@ -120,69 +99,26 @@ so that we do not have to recalculate all the data for the first coronas.
 Here we open that file and deserialize all the data.
 """
 
-with open('./code/test_data.txt', 'r') as text:
-    print("Loading the relevant data...")
-    possible_configs_data = ast.literal_eval(text.readline())
-possible_configs = []
-for config_data in possible_configs_data:
-    config = []
-    for shape in config_data:
-        config.append(Polyomino(
-        [Square(square["x"], square["y"]) for square in shape["squares"]],
-        shapecode = shape["shapecode"],
-        priority = shape["priority"],
-        collision_data = shape["collision_data"]
-        ))
-    possible_configs.append([config])
-coronalist = [possible_config[0] for possible_config in possible_configs]
-"""
-In possible_configs we have all the possible corona around the base shape
-We loop over all the different coronas and
-use sec_corona_maker to determine all the second coronas
-and then extend all the possible configurations to second_configs
-"""
+# with open('./code/T2H2_first_corona_data.txt', 'r') as text:
+#     print("Loading the relevant data...")
+#     possible_configs_data = ast.literal_eval(text.readline())
+# possible_configs = []
+# for config_data in possible_configs_data:
+#     config = []
+#     for shape in config_data:
+#         config.append(Polyomino(
+#         [Square(square["x"], square["y"]) for square in shape["squares"]],
+#         shapecode = shape["shapecode"],
+#         priority = shape["priority"],
+#         collision_data = shape["collision_data"]
+#         ))
+#     possible_configs.append([config])
+# coronalist = [possible_config[0] for possible_config in possible_configs]
+
+heesch_configs = tile1.heesch_computer()
 
 
-
-""" This is the plotting section, where we can view the things we have created """
-
-# second_configs = tile1.heesch_corona(possible_configs, coronalist, 0)
-
-
-# second_configs_data = []
-# for config in second_configs:
-#     config_data = []
-#     for corona in config:
-#         corona_data = []
-#         for tile in corona:
-#             corona_data.append(tile.to_data())
-#         config_data.append(corona_data)
-#     second_configs_data.append(config_data)
-# with open('./code/second_test_data.txt', 'w') as file:
-#     file.write(str(second_configs_data))
-
-with open('./code/second_test_data.txt', 'r') as text:
-    print("Loading the second corona data...")
-    second_configs_data = ast.literal_eval(text.readline())
-second_configs = []
-for config_data in second_configs_data:
-    config = []
-    for corona_data in config_data:
-        corona = []
-        for tile in corona_data:
-            corona.append(Polyomino(
-            [Square(square["x"], square["y"]) for square in tile["squares"]],
-            shapecode = tile["shapecode"],
-            priority = tile["priority"],
-            collision_data = tile["collision_data"]
-            ))
-        config.append(corona)
-    second_configs.append(config)
-print(" the second configurations have been loaded ")
-
-third_configs = tile1.heesch_corona(second_configs, coronalist, 1)
-
-c_config = third_configs[20]
+c_config = heesch_configs[0]
 def c_config_plotter(c_config):
     tileplotter(tile1, "aquamarine")
     for tile in c_config[0]:
@@ -193,9 +129,9 @@ def c_config_plotter(c_config):
         color = "lightseagreen"
         tileplotter(tile, color)
 
-    for tile in c_config[2]:
-        color = "greenyellow"
-        tileplotter(tile, color)
+    # for tile in c_config[2]:
+    #     color = "greenyellow"
+    #     tileplotter(tile, color)
 
 
 
