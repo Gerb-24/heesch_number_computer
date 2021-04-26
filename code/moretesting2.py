@@ -64,38 +64,43 @@ def tileplotter(tile, color):
         patches.append(plot_square)
 
 def c_config_plotter(c_config):
+
+    colordict = {
+    0: "mediumaquamarine",
+    1: "lightseagreen",
+    2: "teal",
+    3: "red",
+    4: "yellow",
+    }
+
     tileplotter(tile1, "aquamarine")
-    for tile in c_config[0]:
-        color = "mediumaquamarine"
-        tileplotter(tile, color)
 
-    for tile in c_config[1]:
-        color = "lightseagreen"
-        tileplotter(tile, color)
-
-    # for tile in c_config[2]:
-    #     color = "greenyellow"
-    #     tileplotter(tile, color)
-
+    for c_config_num  in range(len(c_config)):
+        corona = c_config[c_config_num].copy()
+        for tile in corona:
+            tileplotter(tile, color = colordict[c_config_num])
 
 start_time = time.time()
 
 plottinglist = []
 patches = []
 
-""" Tile 92 with H2 """
+
+""" Tile 7 with H2"""
+
 tile1 = Polyomino(
 [
-Square(0, 0), Square(0, 2), Square(0, 4),
-Square(2, 2), Square(2, 4),
-Square(4, 2), Square(4, 4), Square(4, 6),
-Square(6, 2), Square(6, 4), Square(6, 6),
-Square(8, 0), Square(8, 2), Square(8, 4),
-
+Square(0, 6),
+Square(2, 6),
+Square(4, 6),
+Square(6, 0), Square(6, 6),
+Square(8, 0), Square(8, 2), Square(8, 4), Square(8, 6), Square(8, 8),
+Square(10, 8),
 ],
 priority = [
-Square(2, 0), Square(4, 0), Square(6, 0),
+Square(6, 2), Square(6, 4),
 ]
+
 )
 
 # plottinglist.extend(tile1.plot_data())

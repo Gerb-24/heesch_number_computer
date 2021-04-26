@@ -50,6 +50,70 @@ Square(4, 6),
 ]
 )
 
+""" Tile 4 with H2"""
+
+tile1 = Polyomino(
+[
+Square(0, 0), Square(0, 4),
+Square(2, 0), Square(2, 2), Square(2, 4), Square(2, 6), Square(2, 8),
+Square(4, 8),
+Square(6, 6), Square(6, 8),
+Square(8, 8),
+],
+priority = [
+Square(4, 6),
+]
+
+)
+
+""" Tile 5 with H2"""
+
+tile1 = Polyomino(
+[
+Square(0, 2),
+Square(2, 2),
+Square(4, 2), Square(4, 4), Square(4, 6),
+Square(6, 0), Square(6, 2), Square(6, 4), Square(6, 6),
+Square(8, 2), Square(8, 4),
+],
+priority = [
+]
+
+)
+
+""" Tile 6 with H2"""
+
+tile1 = Polyomino(
+[
+Square(0, 4),
+Square(2, 4),
+Square(4, 0), Square(4, 2), Square(4, 4),
+Square(6, 4), Square(6, 6),
+Square(8, 2), Square(8, 4), Square(8, 6),
+Square(10, 2),
+],
+priority = [
+Square(6, 4), Square(6, 2),
+]
+
+)
+
+""" Tile 10 with H2"""
+
+tile1 = Polyomino(
+[
+Square(0, 4),
+Square(2, 4),
+Square(4, 2), Square(4, 4), Square(4, 8),
+Square(6, 0), Square(6, 2), Square(6, 4), Square(6, 6), Square(6, 8),
+Square(8, 6),
+],
+priority = [
+Square(4, 6),
+]
+
+)
+
 """ Now we get the tiles with Heesch number 3 """
 
 """ The tower tile"""
