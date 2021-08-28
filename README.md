@@ -1,13 +1,18 @@
 # heesch_machine
-Frist cd into code, and run Python. Then enter:
+To use this code you will need to have Python.
+First open the command line and cd into code.
+Then run the python shell with
+```
+python
+```
+Now import the following:
 ```
 from squareshapes import Square, Polyomino
 from moretesting2 import main_func
 
 ```
 
-make a tile, with for example
-
+Make a tile, so for example:
 ```
 tile = Polyomino(
 	[
@@ -28,7 +33,7 @@ tile = Polyomino(
 	]
 )
 ```
-to create the image for the surrounding tiles, enter:
+To create the image for the surrounding tiles, enter:
 
 ```
 main_func(tile)
