@@ -90,8 +90,6 @@ class Polyomino:
         self.edges = edgemaker()
         self.priority = priority
         self.shapecode = shapecode
-        if collision_data == []:
-            print("no collision data")
         self.collision_data = self.collisions() if collision_data == [] else collision_data
 
     def __eq__(self, other):
@@ -187,9 +185,9 @@ class Polyomino:
         new_collision_data = {}
         for bob in range(8):
             new_collision_data[bob] = {(coord[0] + xval, coord[1] + yval) for coord in self.collision_data[bob]}
-        for elem in self.collision_data[1]:
-            if (elem[0]+xval,elem[1]+yval) not in new_collision_data[1]:
-                print(f"seomthing is fucked here")
+        # for elem in self.collision_data[1]:
+        #     if (elem[0]+xval,elem[1]+yval) not in new_collision_data[1]:
+        #         print(f"seomthing is fucked here")
 
         return Polyomino(new_squares, shapecode = new_shapecode, collision_data = new_collision_data)
 
@@ -606,8 +604,13 @@ class Polyomino:
                 coords = new_coords
 
             return without_inside if output else (without_inside != set())
-
-        coronalist = self.corona_maker(self.orientations())
+        first_message = """
+        --------------------------------------
+        We are now computing the 1st corona
+        --------------------------------------
+        """
+        print(first_message)
+        coronalist = self.corona_maker(self.orientations(), printing=False)
 
 
         if coronalist == []:
@@ -618,9 +621,9 @@ class Polyomino:
             i = 0
             while True:
                 message = f"""
-                --------------------------------------
-                We are now computing the {i+2}nd corona
-                --------------------------------------
+        --------------------------------------
+        We are now computing the {i+2}nd corona
+        --------------------------------------
                 """
                 print(message)
                 new_possible_configs = self.heesch_corona(possible_configs, no_hole_coronalist, i)
