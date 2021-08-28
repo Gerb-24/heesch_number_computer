@@ -8,7 +8,7 @@ python
 Now import the following:
 ```
 from squareshapes import Square, Polyomino
-from moretesting2 import main_func
+from main import main_func
 
 ```
 
