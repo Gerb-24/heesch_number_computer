@@ -1,46 +1,21 @@
-# heesch_machine
+# heesch_number_computer
+This code computes the Heesch number of polyominoes, together with an image of an optimal configuration.
+
+### Initialization
 To use this code you will need to have Python.
-First open the command line and cd into code.
-Then run the python shell with
+First open the command line in the "heesch_number_computer-squares" directory.
+To create a virtual environment and install the required modules, write
 ```
-python
-```
-Now import the following:
-```
-from squareshapes import Square, Polyomino
-from main import main_func
-
+python -m venv venv
+venv/scripts/activate
+pip install -r requirements.txt
+deactivate
 ```
 
-Make a tile, so for example:
-```
-tile = Polyomino(
-	[
-		Square(2, 6),
-		Square(4, 6),
-		Square(6, 2), Square(6, 4), Square(6, 6),
-		Square(8, 6), Square(8, 8),
-		Square(10, 4), Square(10, 6), Square(10, 8),
-		Square(12, 4),
-	],
-	priority = [
-		Square(6,8),
-		Square(12,6),
-		Square(4,4),
-		Square(8,4),
-		Square(8,2),
-		Square(10,2),
-	]
-)
-```
-To create the image for the surrounding tiles, enter:
+### Using the code
+Go to https://heesch-tile-drawer.netlify.app/ and create your tile there.
+1. First copy paste in the text to **activate** the virtual environment.
+2. Then copy paste in the text in the **output** area.
+3. When done, copy paste the code to **deactivate** the virtual environment.
 
-```
-main_func(tile)
-```
-
-To stop running the code when it is done, first close the image, and then enter
-```
-exit()
-```
-to close python.
+### Happy Heesching!
